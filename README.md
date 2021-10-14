@@ -14,7 +14,7 @@ files can be specified as just the filename or the full path.
 
 `paccat grub -- etc/default/grub`
 
-Print the contents of 'etc/default/grub' from the gub package.
+Print the contents of 'etc/default/grub' from the grub package.
 
 ---
 
