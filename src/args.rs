@@ -2,8 +2,7 @@ use clap::{Clap, AppSettings};
 
 const ABOUT: &str = "Print pacman package files";
 
-const TEMPLATE: &str = "
-usage: {usage}
+const TEMPLATE: &str = "usage: {usage}
 
 a target can be specified as:
     <pkgname>, <repo>/<pkgname>, <url> or <file>.
