@@ -1,4 +1,4 @@
-use clap::{Clap, AppSettings};
+use clap::{AppSettings, Clap};
 
 const ABOUT: &str = "Print pacman package files";
 
@@ -22,24 +22,51 @@ files can be specified as just the filename or the full path.
     setting(AppSettings::ArgRequiredElseHelp),
 )]
 pub struct Args {
-    #[clap(short = 'x', long, about = "Enable searching using regular expressions")]
+    #[clap(
+        short = 'x',
+        long,
+        about = "Enable searching using regular expressions"
+    )]
     pub regex: bool,
     #[clap(short, long, about = "Print file names instead of file content")]
     pub quiet: bool,
     #[clap(long, about = "Print binary files")]
     pub binary: bool,
 
-    #[clap(short, long, value_name = "path", about = "Set an alternative root directory")]
+    #[clap(
+        short,
+        long,
+        value_name = "path",
+        about = "Set an alternative root directory"
+    )]
     pub root: Option<String>,
-    #[clap(short = 'b', long, value_name = "path", about = "Set an alternative database location")]
+    #[clap(
+        short = 'b',
+        long,
+        value_name = "path",
+        about = "Set an alternative database location"
+    )]
     pub dbpath: Option<String>,
     #[clap(long, value_name = "file", about = "Use an alternative pacman.conf")]
     pub config: Option<String>,
-    #[clap(long, value_name = "path", about = "Set an alternative cache directory")]
+    #[clap(
+        long,
+        value_name = "path",
+        about = "Set an alternative cache directory"
+    )]
     pub cachedir: Option<String>,
 
-    #[clap(required = true, value_name = "target", about = "List of packages, package files, or package urls")]
+    #[clap(
+        required = true,
+        value_name = "target",
+        about = "List of packages, package files, or package urls"
+    )]
     pub targets: Vec<String>,
-    #[clap(required = true, raw = true, value_name = "file", about = "Files to search for")]
+    #[clap(
+        required = true,
+        raw = true,
+        value_name = "file",
+        about = "Files to search for"
+    )]
     pub files: Vec<String>,
 }

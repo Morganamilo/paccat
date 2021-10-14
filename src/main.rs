@@ -139,10 +139,10 @@ where
                 } else {
                     stdout.write_all(&v)?
                 }
-            },
+            }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
                 stdout.write_all(&v)?
-            },
+            }
             ArchiveContents::DataChunk(_) => (),
             ArchiveContents::EndOfEntry => state = EntryState::Skip,
             ArchiveContents::Err(e) => {
