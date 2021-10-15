@@ -179,7 +179,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>>
                 .filter(|pkg| want_pkg(alpm, *pkg, matcher))
                 .filter_map(|p| dbs.pkg(p.name()).ok());
             repo.extend(pkgs);
-        } else {
+        } else if args.filedb {
             let pkgs = dbs
                 .iter()
                 .flat_map(|db| db.pkgs())
@@ -189,7 +189,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>>
     } else {
         for targ in &args.targets {
             if let Ok(pkg) = get_dbpkg(alpm, targ) {
-                if want_pkg(alpm, pkg, matcher) {
+                if pkg.files().files().is_empty() || want_pkg(alpm, pkg, matcher) {
                     repo.push(pkg);
                 }
             } else if targ.contains("://") {
