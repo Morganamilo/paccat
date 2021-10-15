@@ -5,11 +5,13 @@ use anyhow::{bail, Context, Result};
 use clap::Clap;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
+use nix::unistd::isatty;
 use regex::RegexSet;
 use std::fs::File;
 use std::io::{self, Read, Seek, Write};
 use std::iter;
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::io::AsRawFd;
 use std::path::Path;
 
 mod args;
@@ -82,8 +84,11 @@ fn main() {
 }
 
 fn run() -> Result<i32> {
-    let args = args::Args::parse();
+    let mut args = args::Args::parse();
     let mut ret = 0;
+    let stdout = io::stdout();
+
+    args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
 
     let files = args
         .files
