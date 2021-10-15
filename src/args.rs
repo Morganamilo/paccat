@@ -28,6 +28,13 @@ pub struct Args {
         about = "Enable searching using regular expressions"
     )]
     pub regex: bool,
+    #[clap(
+        short,
+        long,
+        about = "print all matches of files instead of just the first"
+    )]
+    pub all: bool,
+
     #[clap(short, long, about = "Print file names instead of file content")]
     pub quiet: bool,
     #[clap(long, about = "Print binary files")]

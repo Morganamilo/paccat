@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::pacman::{alpm_init, get_download_url, get_dbpkg};
+use crate::pacman::{alpm_init, get_dbpkg, get_download_url};
 use alpm::{Alpm, Package};
 use alpm_utils::DbListExt;
 use anyhow::{bail, Context, Result};
@@ -23,19 +23,19 @@ enum EntryState {
     Reading,
 }
 
-struct Match<'a> {
-    with: MatchWith<'a>,
+struct Match {
+    with: MatchWith,
     exact_file: bool,
 }
 
-impl<'a> Match<'a> {
-    fn new(regex: bool, files: &'a [&'a str]) -> Result<Self> {
+impl Match {
+    fn new(regex: bool, files: Vec<String>) -> Result<Self> {
         let exact_file = files.iter().any(|f| f.contains('/'));
         let with = MatchWith::new(regex, files)?;
         Ok(Self { exact_file, with })
     }
 
-    fn is_match(&self, file: &str) -> bool {
+    fn is_match(&mut self, file: &str, remove: bool) -> bool {
         let file = if !self.exact_file {
             file.rsplit('/').next().unwrap()
         } else {
@@ -48,18 +48,27 @@ impl<'a> Match<'a> {
 
         match self.with {
             MatchWith::Regex(ref r) => r.is_match(file),
-            MatchWith::Files(f) => f.iter().any(|&t| t == file),
+            MatchWith::Files(ref mut f) => {
+                if let Some(pos) = f.iter().position(|t| t == file) {
+                    if remove {
+                        f.remove(pos);
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 }
 
-enum MatchWith<'a> {
+enum MatchWith {
     Regex(RegexSet),
-    Files(&'a [&'a str]),
+    Files(Vec<String>),
 }
 
-impl<'a> MatchWith<'a> {
-    fn new(regex: bool, files: &'a [&'a str]) -> Result<Self> {
+impl MatchWith {
+    fn new(regex: bool, files: Vec<String>) -> Result<Self> {
         let match_with = if regex {
             let regex = RegexSet::new(files)?;
             MatchWith::Regex(regex)
@@ -93,24 +102,24 @@ fn run() -> Result<i32> {
     let files = args
         .files
         .iter()
-        .map(|f| f.trim_start_matches('/'))
+        .map(|f| f.trim_start_matches('/').to_string())
         .collect::<Vec<_>>();
 
-    let matcher = Match::new(args.regex, &files)?;
+    let mut matcher = Match::new(args.regex, files)?;
     let alpm = alpm_init(&args)?;
 
-    let pkgs = get_targets(&alpm, &args, &matcher)?;
+    let pkgs = get_targets(&alpm, &args, &mut matcher)?;
 
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
         let archive = ArchiveIterator::from_read(file)?;
-        ret |= dump_files(archive, &matcher, &args)?;
+        ret |= dump_files(archive, &mut matcher, &args)?;
     }
 
     Ok(ret)
 }
 
-fn dump_files<R>(archive: ArchiveIterator<R>, matcher: &Match, args: &Args) -> Result<i32>
+fn dump_files<R>(archive: ArchiveIterator<R>, matcher: &mut Match, args: &Args) -> Result<i32>
 where
     R: Read + Seek,
 {
@@ -123,7 +132,7 @@ where
     for content in archive {
         match content {
             ArchiveContents::StartOfEntry(file) => {
-                if matcher.is_match(&file) {
+                if matcher.is_match(&file, !args.all) {
                     found += 1;
                     if args.quiet {
                         writeln!(stdout, "{}", file)?;
@@ -152,7 +161,7 @@ where
         }
     }
 
-    let ret = match matcher.with {
+    let ret = match &matcher.with {
         MatchWith::Files(f) if f.len() as i32 == found => 0,
         MatchWith::Regex(_) if found != 0 => 0,
         _ => 1,
@@ -165,7 +174,7 @@ fn is_binary(data: &[u8]) -> bool {
     data.iter().take(512).any(|&b| b == 0)
 }
 
-fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>> {
+fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<String>> {
     let mut download = Vec::new();
     let mut repo = Vec::new();
     let mut files = Vec::new();
@@ -214,7 +223,13 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>>
     Ok(files)
 }
 
-fn want_pkg(_alpm: &Alpm, pkg: Package, matcher: &Match) -> bool {
+fn want_pkg(_alpm: &Alpm, pkg: Package, matcher: &mut Match) -> bool {
     let files = pkg.files();
-    files.files().iter().any(|f| matcher.is_match(f.name()))
+    if matches!(matcher.with, MatchWith::Files(ref f) if f.is_empty()) {
+        return false;
+    }
+    files
+        .files()
+        .iter()
+        .any(|f| matcher.is_match(f.name(), false))
 }
