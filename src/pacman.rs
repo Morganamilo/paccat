@@ -29,7 +29,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     if let Some(dir) = args.cachedir.as_deref() {
         alpm.set_cachedirs(iter::once(dir))?;
     } else {
-        alpm.add_cachedir(std::env::temp_dir().as_os_str().as_bytes())?;
+        alpm.add_cachedir(std::env::temp_dir().join("paccat").as_os_str().as_bytes())?;
     }
     Ok(alpm)
 }
