@@ -6,7 +6,7 @@ Print pacman package files
 
 `paccat [options] <targets> -- <files>`
 
-a target is can be specified as `<pkgname>`, `<repo>/<pkgname>`, `<url>` or `<file>`.
+a target can be specified as `<pkgname>`, `<repo>/<pkgname>`, `<url>` or `<file>`.
 
 files can be specified as just the filename or the full path.
 
