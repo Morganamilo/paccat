@@ -1,5 +1,5 @@
 use crate::args::Args;
-use alpm::{Alpm, AnyDownloadEvent, DownloadEvent, DownloadResult, LogLevel};
+use alpm::{Alpm, AnyDownloadEvent, DownloadEvent, DownloadResult, LogLevel, Package};
 use alpm_utils::{DbListExt, Targ};
 use anyhow::{bail, Context, Result};
 use clap::Clap;
@@ -99,11 +99,7 @@ fn run() -> Result<i32> {
     let matcher = Match::new(args.regex, &files)?;
     let alpm = alpm_init(&args)?;
 
-    let pkgs = args
-        .targets
-        .iter()
-        .map(|t| get_target(&alpm, t))
-        .collect::<Result<Vec<_>, _>>()?;
+    let pkgs = get_targets(&alpm, &args.targets)?;
 
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
@@ -169,16 +165,44 @@ fn is_binary(data: &[u8]) -> bool {
     data.iter().take(512).any(|&b| b == 0)
 }
 
-fn get_target(alpm: &Alpm, targ: &str) -> Result<String> {
-    if let Ok(pkg) = get_dbpkg(alpm, targ) {
-        Ok(pkg)
-    } else if targ.contains("://") {
-        get_pkg_from_url(alpm, targ)
-    } else if Path::new(targ).exists() {
-        Ok(targ.to_string())
-    } else {
-        bail!("'{}' is not a package, file or url", targ)
+fn get_targets(alpm: &Alpm, targs: &[String]) -> Result<Vec<String>> {
+    let mut download = Vec::new();
+    let mut repo = Vec::new();
+    let mut files = Vec::new();
+
+    for targ in targs {
+        if let Ok(pkg) = get_dbpkg(alpm, targ) {
+            repo.push(pkg);
+        } else if targ.contains("://") {
+            download.push(targ.clone());
+        } else if Path::new(&targ).exists() {
+            files.push(targ.to_string());
+        } else {
+            bail!("'{}' is not a package, file or url", targ);
+        }
     }
+
+    // todo filter repopkg files
+
+    for pkg in repo {
+        download.push(get_download_url(pkg)?);
+    }
+
+    let downloaded = alpm.fetch_pkgurl(download.into_iter())?;
+    files.extend(downloaded);
+
+    Ok(files)
+}
+
+fn get_download_url(pkg: Package) -> Result<String> {
+    let server = pkg
+        .db()
+        .unwrap()
+        .servers()
+        .first()
+        .ok_or(alpm::Error::ServerNone)?;
+    let url = format!("{}/{}", server, pkg.filename());
+    Ok(url)
 }
 
 fn alpm_init(args: &Args) -> Result<Alpm> {
@@ -201,27 +225,13 @@ fn alpm_init(args: &Args) -> Result<Alpm> {
     Ok(alpm)
 }
 
-fn get_pkg_from_url(alpm: &Alpm, url: &str) -> Result<String> {
-    let file = alpm.fetch_pkgurl(iter::once(url))?;
-    let file = file.first().unwrap().to_string();
-    Ok(file)
-}
-
-fn get_dbpkg(alpm: &Alpm, target_str: &str) -> Result<String> {
+fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str) -> Result<Package<'a>> {
     let target = Targ::from(target_str);
     let pkg = alpm
         .syncdbs()
         .find_target_satisfier(target)
         .with_context(|| format!("could not find package: {}", target_str))?;
-
-    let server = pkg
-        .db()
-        .unwrap()
-        .servers()
-        .first()
-        .ok_or(alpm::Error::ServerNone)?;
-    let url = format!("{}/{}", server, pkg.filename());
-    get_pkg_from_url(alpm, &url)
+    Ok(pkg)
 }
 
 fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
