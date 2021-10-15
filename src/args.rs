@@ -32,6 +32,18 @@ pub struct Args {
     pub quiet: bool,
     #[clap(long, about = "Print binary files")]
     pub binary: bool,
+    #[clap(
+        short = 'F',
+        long = "files",
+        about = "Use files database to search for files before deciding to download"
+    )]
+    pub filedb: bool,
+    #[clap(
+        short = 'Q',
+        long = "query",
+        about = "Use local database to search for files before deciding to download"
+    )]
+    pub localdb: bool,
 
     #[clap(
         short,
@@ -57,7 +69,6 @@ pub struct Args {
     pub cachedir: Option<String>,
 
     #[clap(
-        required = true,
         value_name = "target",
         about = "List of packages, package files, or package urls"
     )]

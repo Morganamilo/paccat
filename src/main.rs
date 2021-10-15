@@ -99,7 +99,7 @@ fn run() -> Result<i32> {
     let matcher = Match::new(args.regex, &files)?;
     let alpm = alpm_init(&args)?;
 
-    let pkgs = get_targets(&alpm, &args.targets)?;
+    let pkgs = get_targets(&alpm, &args, &matcher)?;
 
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
@@ -165,20 +165,40 @@ fn is_binary(data: &[u8]) -> bool {
     data.iter().take(512).any(|&b| b == 0)
 }
 
-fn get_targets(alpm: &Alpm, targs: &[String]) -> Result<Vec<String>> {
+fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>> {
     let mut download = Vec::new();
     let mut repo = Vec::new();
     let mut files = Vec::new();
+    let dbs = alpm.syncdbs();
 
-    for targ in targs {
-        if let Ok(pkg) = get_dbpkg(alpm, targ) {
-            repo.push(pkg);
-        } else if targ.contains("://") {
-            download.push(targ.clone());
-        } else if Path::new(&targ).exists() {
-            files.push(targ.to_string());
+    if args.targets.is_empty() {
+        if args.localdb {
+            let pkgs = alpm.localdb().pkgs();
+            let pkgs = pkgs
+                .iter()
+                .filter(|pkg| want_pkg(alpm, *pkg, matcher))
+                .filter_map(|p| dbs.pkg(p.name()).ok());
+            repo.extend(pkgs);
         } else {
-            bail!("'{}' is not a package, file or url", targ);
+            let pkgs = dbs
+                .iter()
+                .flat_map(|db| db.pkgs())
+                .filter(|pkg| want_pkg(alpm, *pkg, matcher));
+            repo.extend(pkgs);
+        }
+    } else {
+        for targ in &args.targets {
+            if let Ok(pkg) = get_dbpkg(alpm, targ) {
+                if want_pkg(alpm, pkg, matcher) {
+                    repo.push(pkg);
+                }
+            } else if targ.contains("://") {
+                download.push(targ.clone());
+            } else if Path::new(&targ).exists() {
+                files.push(targ.to_string());
+            } else {
+                bail!("'{}' is not a package, file or url", targ);
+            }
         }
     }
 
@@ -205,6 +225,11 @@ fn get_download_url(pkg: Package) -> Result<String> {
     Ok(url)
 }
 
+fn want_pkg(_alpm: &Alpm, pkg: Package, matcher: &Match) -> bool {
+    let files = pkg.files();
+    files.files().iter().any(|f| matcher.is_match(f.name()))
+}
+
 fn alpm_init(args: &Args) -> Result<Alpm> {
     let conf = pacmanconf::Config::with_opts(None, args.config.as_deref(), args.root.as_deref())?;
     let dbpath = args
@@ -212,10 +237,15 @@ fn alpm_init(args: &Args) -> Result<Alpm> {
         .as_deref()
         .unwrap_or_else(|| conf.db_path.as_str());
     let mut alpm = Alpm::new(conf.root_dir.as_str(), dbpath)?;
-    alpm_utils::configure_alpm(&mut alpm, &conf)?;
+
+    if args.filedb {
+        alpm.set_dbext(".files");
+    }
 
     alpm.set_dl_cb((), download_cb);
     alpm.set_log_cb((), log_cb);
+
+    alpm_utils::configure_alpm(&mut alpm, &conf)?;
 
     if let Some(dir) = args.cachedir.as_deref() {
         alpm.set_cachedirs(iter::once(dir))?;
