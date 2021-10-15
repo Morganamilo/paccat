@@ -1,6 +1,6 @@
 use crate::args::Args;
 use anyhow::{Result, Context};
-use alpm::{Alpm, AnyDownloadEvent, DownloadEvent, DownloadResult, LogLevel, Package};
+use alpm::{Alpm, AnyDownloadEvent, DownloadEvent, DownloadResult, LogLevel, Package, AnyEvent, Event};
 use alpm_utils::DbListExt;
 use std::os::unix::ffi::OsStrExt;
 use std::iter;
@@ -20,6 +20,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
 
     alpm.set_dl_cb((), download_cb);
     alpm.set_log_cb((), log_cb);
+    alpm.set_event_cb((), event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
 
@@ -70,3 +71,12 @@ fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
         _ => (),
     }
 }
+
+fn event_cb(event: AnyEvent, _: &mut ()) {
+    match event.event() {
+        Event::DatabaseMissing(e) => eprintln!("database file for {} does not exist (use pacman to download)", e.dbname()),
+        _ => (),
+    }
+}
+
+
