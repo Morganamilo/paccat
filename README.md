@@ -20,7 +20,13 @@ Print the contents of 'etc/default/grub' from the grub package.
 
 `paccat pacman -- pacman.conf`
 
-Print the contents of any file named 'pacman.conf' from the pacman package.
+Print the contents of the first file named 'pacman.conf' from the pacman package.
+
+---
+
+`paccat -F -- pacman.conf`
+
+Print the contents of the first file named 'pacman.conf' in the repos
 
 ---
 

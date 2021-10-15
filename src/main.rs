@@ -162,7 +162,7 @@ where
     }
 
     let ret = match &matcher.with {
-        MatchWith::Files(f) if f.len() as i32 == found => 0,
+        MatchWith::Files(f) if f.is_empty() => 0,
         MatchWith::Regex(_) if found != 0 => 0,
         _ => 1,
     };

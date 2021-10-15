@@ -47,6 +47,7 @@ pub struct Args {
     pub filedb: bool,
     #[clap(
         short = 'Q',
+        conflicts_with = "filedb",
         long = "query",
         about = "Use local database to search for files before deciding to download"
     )]
@@ -76,10 +77,12 @@ pub struct Args {
     pub cachedir: Option<String>,
 
     #[clap(
+        required_unless_present_any = ["localdb", "filedb"],
         value_name = "target",
         about = "List of packages, package files, or package urls"
     )]
     pub targets: Vec<String>,
+
     #[clap(
         required = true,
         raw = true,
