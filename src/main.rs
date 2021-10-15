@@ -1,6 +1,7 @@
 use crate::args::Args;
-use alpm::{Alpm, AnyDownloadEvent, DownloadEvent, DownloadResult, LogLevel, Package};
-use alpm_utils::{DbListExt, Targ};
+use crate::pacman::{alpm_init, get_download_url, get_dbpkg};
+use alpm::{Alpm, Package};
+use alpm_utils::DbListExt;
 use anyhow::{bail, Context, Result};
 use clap::Clap;
 use compress_tools::{ArchiveContents, ArchiveIterator};
@@ -9,12 +10,11 @@ use nix::unistd::isatty;
 use regex::RegexSet;
 use std::fs::File;
 use std::io::{self, Read, Seek, Write};
-use std::iter;
-use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
 
 mod args;
+mod pacman;
 
 #[derive(PartialEq, Eq)]
 enum EntryState {
@@ -214,72 +214,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &Match) -> Result<Vec<String>>
     Ok(files)
 }
 
-fn get_download_url(pkg: Package) -> Result<String> {
-    let server = pkg
-        .db()
-        .unwrap()
-        .servers()
-        .first()
-        .ok_or(alpm::Error::ServerNone)?;
-    let url = format!("{}/{}", server, pkg.filename());
-    Ok(url)
-}
-
 fn want_pkg(_alpm: &Alpm, pkg: Package, matcher: &Match) -> bool {
     let files = pkg.files();
     files.files().iter().any(|f| matcher.is_match(f.name()))
-}
-
-fn alpm_init(args: &Args) -> Result<Alpm> {
-    let conf = pacmanconf::Config::with_opts(None, args.config.as_deref(), args.root.as_deref())?;
-    let dbpath = args
-        .dbpath
-        .as_deref()
-        .unwrap_or_else(|| conf.db_path.as_str());
-    let mut alpm = Alpm::new(conf.root_dir.as_str(), dbpath)?;
-
-    if args.filedb {
-        alpm.set_dbext(".files");
-    }
-
-    alpm.set_dl_cb((), download_cb);
-    alpm.set_log_cb((), log_cb);
-
-    alpm_utils::configure_alpm(&mut alpm, &conf)?;
-
-    if let Some(dir) = args.cachedir.as_deref() {
-        alpm.set_cachedirs(iter::once(dir))?;
-    } else {
-        alpm.add_cachedir(std::env::temp_dir().as_os_str().as_bytes())?;
-    }
-    Ok(alpm)
-}
-
-fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str) -> Result<Package<'a>> {
-    let target = Targ::from(target_str);
-    let pkg = alpm
-        .syncdbs()
-        .find_target_satisfier(target)
-        .with_context(|| format!("could not find package: {}", target_str))?;
-    Ok(pkg)
-}
-
-fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
-    match event.event() {
-        DownloadEvent::Init(_) => eprintln!("downloading {}...", file),
-        DownloadEvent::Completed(e) => match e.result {
-            DownloadResult::Failed => eprintln!("{} failed to download", file),
-            DownloadResult::UpToDate => eprintln!("{} is up to date", file),
-            _ => (),
-        },
-        _ => (),
-    }
-}
-
-fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
-    match level {
-        LogLevel::WARNING => eprint!("warning: {}", msg),
-        LogLevel::ERROR => eprint!("error: {}", msg),
-        _ => (),
-    }
 }
