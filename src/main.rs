@@ -134,25 +134,26 @@ where
         match content {
             ArchiveContents::StartOfEntry(file) => {
                 if matcher.is_match(&file, !args.all) {
-                    state = EntryState::FirstChunk;
                     found += 1;
 
                     if args.quiet {
                         writeln!(stdout, "{}", cur_file)?;
-                        state = EntryState::Skip;
                     } else {
+                        state = EntryState::FirstChunk;
                         cur_file = file;
-                    }
 
-                    if args.extract {
-                        let filename = cur_file.rsplit('/').next().unwrap();
-                        let file = OpenOptions::new()
-                            .write(true)
-                            .create(true)
-                            .truncate(true)
-                            .open(filename)
-                            .with_context(|| format!("failed to open target {}", filename))?;
-                        cur_extract_file = Some(file);
+                        if args.extract {
+                            writeln!(stdout, "{}", cur_file)?;
+
+                            let filename = cur_file.rsplit('/').next().unwrap();
+                            let extract_file = OpenOptions::new()
+                                .write(true)
+                                .create(true)
+                                .truncate(true)
+                                .open(filename)
+                                .with_context(|| format!("failed to open target {}", filename))?;
+                            cur_extract_file = Some(extract_file);
+                        }
                     }
                 }
             }
@@ -162,19 +163,19 @@ where
                     eprintln!("{} is a binary file -- use --binary to print", cur_file);
                 } else {
                     state = EntryState::Reading;
-                    stdout.write_all(&v)?;
 
-                    if args.extract {
-                        cur_extract_file. as_ref().unwrap().write_all(&v)?;
+                    if let Some(extract_file) = &mut cur_extract_file {
+                        extract_file.write_all(&v)?;
+                    } else {
+                        stdout.write_all(&v)?;
                     }
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
-                if !args.quiet {
-                    stdout.write_all(&v)?
-                }
-                if args.extract {
-                    cur_extract_file.as_ref().unwrap().write_all(&v)?;
+                if let Some(extract_file) = &mut cur_extract_file {
+                    extract_file.write_all(&v)?;
+                } else {
+                    stdout.write_all(&v)?;
                 }
             }
             ArchiveContents::DataChunk(_) => (),
