@@ -134,9 +134,16 @@ where
         match content {
             ArchiveContents::StartOfEntry(file) => {
                 if matcher.is_match(&file, !args.all) {
+                    state = EntryState::FirstChunk;
                     found += 1;
 
-                    cur_file = file;
+                    if args.quiet {
+                        writeln!(stdout, "{}", cur_file)?;
+                        state = EntryState::Skip;
+                    } else {
+                        cur_file = file;
+                    }
+
                     if args.extract {
                         let filename = cur_file.rsplit('/').next().unwrap();
                         let file = OpenOptions::new()
@@ -147,8 +154,6 @@ where
                             .with_context(|| format!("failed to open target {}", filename))?;
                         cur_extract_file = Some(file);
                     }
-
-                    state = EntryState::FirstChunk;
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::FirstChunk => {
@@ -156,17 +161,11 @@ where
                     state = EntryState::Skip;
                     eprintln!("{} is a binary file -- use --binary to print", cur_file);
                 } else {
-                    if args.quiet {
-                        state = EntryState::Skip;
-                        writeln!(stdout, "{}", cur_file)?;
-                    } else {
-                        state = EntryState::Reading;
-                        stdout.write_all(&v)?;
-                    }
+                    state = EntryState::Reading;
+                    stdout.write_all(&v)?;
 
                     if args.extract {
-                        state = EntryState::Reading;
-                        cur_extract_file .as_ref().unwrap().write_all(&v)?;
+                        cur_extract_file. as_ref().unwrap().write_all(&v)?;
                     }
                 }
             }
