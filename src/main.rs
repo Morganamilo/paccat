@@ -128,7 +128,7 @@ where
     let mut state = EntryState::Skip;
     let mut found = 0;
     let mut cur_file = String::new();
-    let mut cur_target: Option<File> = None;
+    let mut cur_extract_file: Option<File> = None;
 
     for content in archive {
         match content {
@@ -145,7 +145,7 @@ where
                             .truncate(true)
                             .open(filename)
                             .with_context(|| format!("failed to open target {}", filename))?;
-                        cur_target = Some(file);
+                        cur_extract_file = Some(file);
                     }
 
                     state = EntryState::FirstChunk;
@@ -166,7 +166,7 @@ where
 
                     if args.extract {
                         state = EntryState::Reading;
-                        cur_target.as_ref().unwrap().write_all(&v)?;
+                        cur_extract_file .as_ref().unwrap().write_all(&v)?;
                     }
                 }
             }
@@ -175,7 +175,7 @@ where
                     stdout.write_all(&v)?
                 }
                 if args.extract {
-                    cur_target.as_ref().unwrap().write_all(&v)?;
+                    cur_extract_file.as_ref().unwrap().write_all(&v)?;
                 }
             }
             ArchiveContents::DataChunk(_) => (),
