@@ -1,0 +1,39 @@
+name: Paccat
+
+on:
+  push:
+    paths:
+      - 'src/*.rs'
+      - 'testdata/**'
+      - 'tests/**'
+      - 'Cargo.*'
+  pull_request:
+    paths:
+      - 'src/*.rs'
+      - 'testdata/**'
+      - 'tests/**'
+      - 'Cargo.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux
+    steps:
+      - name: Install Packages
+        run: pacman -Syu rust clang gcc pkgconf --needed --noconfirm
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Format
+        run: cargo fmt -- --check
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: Test
+        run: cargo test --locked
