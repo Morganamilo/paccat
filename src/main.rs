@@ -145,9 +145,10 @@ where
             ArchiveContents::DataChunk(v) if state == EntryState::FirstChunk => {
                 if is_binary(&v) && !args.binary {
                     state = EntryState::Skip;
-                    eprintln!("{} is a binary file -- use --binary to print", cur_file)
+                    eprintln!("{} is a binary file -- use --binary to print", cur_file);
                 } else {
-                    stdout.write_all(&v)?
+                    state = EntryState::Reading;
+                    stdout.write_all(&v)?;
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
