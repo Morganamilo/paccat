@@ -37,6 +37,12 @@ pub struct Args {
     )]
     pub all: bool,
 
+    #[clap(
+        short = 'e',
+        long,
+        about = "Extract matched files to the current directory"
+    )]
+    pub extract: bool,
     #[clap(short, long, about = "Print file names instead of file content")]
     pub quiet: bool,
     #[clap(long, about = "Print binary files")]
