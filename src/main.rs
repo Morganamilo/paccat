@@ -138,17 +138,14 @@ where
 
                     cur_file = file;
                     if args.extract {
-                        cur_target = {
-                            let target = cur_file.rsplit('/').next().unwrap();
-                            Some(
-                                OpenOptions::new()
-                                    .write(true)
-                                    .create(true)
-                                    .truncate(true)
-                                    .open(target)
-                                    .with_context(|| format!("failed to open target {}", target))?,
-                            )
-                        }
+                        let filename = cur_file.rsplit('/').next().unwrap();
+                        let file = OpenOptions::new()
+                            .write(true)
+                            .create(true)
+                            .truncate(true)
+                            .open(filename)
+                            .with_context(|| format!("failed to open target {}", filename))?;
+                        cur_target = Some(file);
                     }
 
                     state = EntryState::FirstChunk;
