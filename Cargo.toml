@@ -27,4 +27,5 @@ lto = true
 
 [features]
 git = ["alpm/git", "alpm-utils/git"]
+generate = ["alpm/generate"]
 
