@@ -75,11 +75,10 @@ fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
 }
 
 fn event_cb(event: AnyEvent, _: &mut ()) {
-    match event.event() {
-        Event::DatabaseMissing(e) => eprintln!(
+    if let Event::DatabaseMissing(e) = event.event() {
+        eprintln!(
             "database file for {} does not exist (use pacman to download)",
             e.dbname()
-        ),
-        _ => (),
+        );
     }
 }
