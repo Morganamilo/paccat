@@ -1,4 +1,4 @@
-use clap::{AppSettings, Clap};
+use clap::{AppSettings, Parser};
 
 const ABOUT: &str = "Print pacman package files";
 
@@ -15,12 +15,11 @@ files can be specified as just the filename or the full path.
 
 {unified}";
 
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(about = ABOUT,
     help_template = TEMPLATE,
     version = concat!("v", clap::crate_version!()),
     setting(AppSettings::AllArgsOverrideSelf),
-    setting(AppSettings::UnifiedHelpMessage),
     setting(AppSettings::ArgRequiredElseHelp),
 )]
 pub struct Args {

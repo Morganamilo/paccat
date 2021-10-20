@@ -3,7 +3,7 @@ use crate::pacman::{alpm_init, get_dbpkg, get_download_url};
 use alpm::{Alpm, Package};
 use alpm_utils::DbListExt;
 use anyhow::{bail, Context, Result};
-use clap::Clap;
+use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::unistd::isatty;
