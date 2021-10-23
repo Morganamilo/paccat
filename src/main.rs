@@ -98,6 +98,7 @@ fn run() -> Result<i32> {
     let stdout = io::stdout();
 
     args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
+    args.binary |= args.extract;
 
     let files = args
         .files
