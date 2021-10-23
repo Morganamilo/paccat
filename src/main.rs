@@ -137,14 +137,12 @@ where
                 if matcher.is_match(&file, !args.all) {
                     found += 1;
 
-                    if args.quiet {
+                    if args.quiet || args.extract {
                         writeln!(stdout, "{}", cur_file)?;
-                    } else {
-                        state = EntryState::FirstChunk;
-                        cur_file = file;
 
                         if args.extract {
-                            writeln!(stdout, "{}", cur_file)?;
+                            state = EntryState::FirstChunk;
+                            cur_file = file;
 
                             let filename = cur_file.rsplit('/').next().unwrap();
                             let extract_file = OpenOptions::new()
@@ -155,6 +153,9 @@ where
                                 .with_context(|| format!("failed to open target {}", filename))?;
                             cur_extract_file = Some(extract_file);
                         }
+                    } else {
+                        state = EntryState::FirstChunk;
+                        cur_file = file;
                     }
                 }
             }
