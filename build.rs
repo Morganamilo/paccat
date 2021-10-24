@@ -4,6 +4,8 @@ use clap_generate::{generate_to, Shell};
 include!("src/args.rs");
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=COMPLETIONS_DIR");
+
     let directory = match std::env::var_os("COMPLETIONS_DIR") {
         None => return,
         Some(out_dir) => out_dir,
