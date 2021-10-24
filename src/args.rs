@@ -13,7 +13,7 @@ files can be specified as just the filename or the full path.
 
 {about}
 
-{unified}";
+{options}";
 
 #[derive(Parser, Debug)]
 #[clap(about = ABOUT,
