@@ -16,10 +16,14 @@ alpm-utils = "1.1.2"
 pacmanconf = "1.0.0"
 
 anyhow = "1.0.44"
-clap = {version = "3.0.0-beta.4", default-features = false, features = ["std", "cargo", "derive"]}
 compress-tools = "0.12.2"
 nix = "0.23.0"
 regex = "1.5.4"
+clap = {version = "=3.0.0-beta.5", default-features = false, features = ["std", "cargo", "derive"]}
+
+[build-dependencies]
+clap = {version = "=3.0.0-beta.5", default-features = false, features = ["std", "cargo", "derive"]}
+clap_generate = {version = "=3.0.0-beta.5"}
 
 [profile.release]
 codegen-units = 1
@@ -28,4 +32,3 @@ lto = true
 [features]
 git = ["alpm/git", "alpm-utils/git"]
 generate = ["alpm/generate"]
-
