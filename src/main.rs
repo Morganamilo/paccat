@@ -8,7 +8,7 @@ use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::unistd::isatty;
 use regex::RegexSet;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
@@ -98,6 +98,7 @@ fn run() -> Result<i32> {
     let stdout = io::stdout();
 
     args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
+    args.binary |= args.extract;
 
     let files = args
         .files
@@ -128,17 +129,33 @@ where
     let mut state = EntryState::Skip;
     let mut found = 0;
     let mut cur_file = String::new();
+    let mut cur_extract_file: Option<File> = None;
 
     for content in archive {
         match content {
             ArchiveContents::StartOfEntry(file) => {
                 if matcher.is_match(&file, !args.all) {
                     found += 1;
-                    if args.quiet {
+
+                    if args.quiet || args.extract {
                         writeln!(stdout, "{}", file)?;
+
+                        if args.extract {
+                            state = EntryState::FirstChunk;
+                            cur_file = file;
+
+                            let filename = cur_file.rsplit('/').next().unwrap();
+                            let extract_file = OpenOptions::new()
+                                .write(true)
+                                .create(true)
+                                .truncate(true)
+                                .open(filename)
+                                .with_context(|| format!("failed to open target {}", filename))?;
+                            cur_extract_file = Some(extract_file);
+                        }
                     } else {
-                        cur_file = file;
                         state = EntryState::FirstChunk;
+                        cur_file = file;
                     }
                 }
             }
@@ -148,11 +165,20 @@ where
                     eprintln!("{} is a binary file -- use --binary to print", cur_file);
                 } else {
                     state = EntryState::Reading;
-                    stdout.write_all(&v)?;
+
+                    if let Some(extract_file) = &mut cur_extract_file {
+                        extract_file.write_all(&v)?;
+                    } else {
+                        stdout.write_all(&v)?;
+                    }
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
-                stdout.write_all(&v)?
+                if let Some(extract_file) = &mut cur_extract_file {
+                    extract_file.write_all(&v)?;
+                } else {
+                    stdout.write_all(&v)?;
+                }
             }
             ArchiveContents::DataChunk(_) => (),
             ArchiveContents::EndOfEntry => state = EntryState::Skip,
