@@ -138,7 +138,7 @@ where
                     found += 1;
 
                     if args.quiet || args.extract {
-                        writeln!(stdout, "{}", cur_file)?;
+                        writeln!(stdout, "{}", file)?;
 
                         if args.extract {
                             state = EntryState::FirstChunk;
