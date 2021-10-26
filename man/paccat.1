@@ -1,0 +1,108 @@
+.TH "PACCAT" "1" "2021\-10\-26" "paccat v0.1.0 "Paccat Manual"
+.nh
+.ad l
+.SH NAME
+paccat \- Print pacman package files
+
+.SH SYNOPSIS
+.nf
+\fIpaccat\fR [options] [-<Q|F>] [targets] -- <files>
+\fIpaccat\fR [options] [targets] -- <files>
+.fi
+.sp
+a target can be specified as:
+    <pkgname>, <repo>/<pkgname>, <url> or <file>.
+.sp
+files can be specified as just the filename or the full path.
+
+.SH DESCRIPTION
+Print pacman package files.
+
+.SH EXAMPLES
+.TP
+
+.TP
+.B \-a, \-\-all
+print all matches of files instead of just the first
+
+.TP
+.B \-b, \-\-dbpath <path>
+Set an alternative database location
+
+.TP
+.B \-\-binary
+Print binary files
+
+.TP
+.B \-\-cachedir <path>
+Set an alternative cache directory
+
+.TP
+.B \-\-config <file>
+Use an alternative pacman.conf
+
+.TP
+.B \-e, \-\-extract
+Extract matched files to the current directory
+
+.TP
+.B \-F, \-\-files
+Use files database to search for files before deciding to download
+
+.TP
+.B \-h, \-\-help
+Print help information
+
+.TP
+.B \-q, \-\-quiet
+Print file names instead of file content
+
+.TP
+.B \-Q, \-\-query
+Use local database to search for files before deciding to download
+
+.TP
+.B \-r, \-\-root <path>
+Set an alternative root directory
+
+.TP
+.B \-V, \-\-version
+Print version information
+
+.TP
+.B \-x, \-\-regex
+Enable searching using regular expressions
+
+.SH Examples
+.TP
+paccat grub \-\- etc/default/grub
+Print the contents of 'etc/default/grub' from the grub package.
+
+.TP
+paccat pacman \-\- pacman.conf
+Print the contents of the first file named 'pacman.conf' from the pacman package.
+
+.TP
+paccat \-F \-\- pacman.conf
+Print the contents of the first file named 'pacman.conf' in the repos
+
+.TP
+paccat \-x pacman mkinitcpio \-\- '\\.conf^'
+Print the contents of all files ending in '.conf' from both the pacman and mkinitcpio packages.
+
+.TP
+paccat ~/pkgs/my\-pkg\-1.0.0\-1.pkg.tar.zst \-\- myfile
+Print the contents of 'myfile' from a package tarball.
+
+.TP
+paccat https://archlinux.org/packages/extra/x86_64/git/download \-\- git\-blame.1.gz
+Download and print the contents of 'git-blame.1.gz' from the git package.";
+
+.SH SEE ALSO
+.BR pacman (8)
+
+.SH BUGS
+Please report bugs to our GitHub page \fBhttps://github.com/Morganamilo/paccat\fR.
+
+.SH AUTHORS
+Morgan <morganamilo@archlinux.org>
