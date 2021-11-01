@@ -18,16 +18,19 @@ files can be specified as just the filename or the full path.
 .SH DESCRIPTION
 Print pacman package files.
 
-.SH EXAMPLES
+paccat prints files from packages independent of your system by downloading the needed
+packages and extracting the needed files.
+
+.SH OPTIONS
 .TP
 
 .TP
 .B \-a, \-\-all
-print all matches of files instead of just the first
+print all matches of files instead of just the first.
 
 .TP
 .B \-b, \-\-dbpath <path>
-Set an alternative database location
+Set an alternative database location.
 
 .TP
 .B \-\-binary
@@ -35,67 +38,67 @@ Print binary files
 
 .TP
 .B \-\-cachedir <path>
-Set an alternative cache directory
+Set an alternative cache directory.
 
 .TP
 .B \-\-config <file>
-Use an alternative pacman.conf
+Use an alternative pacman.conf.
 
 .TP
 .B \-e, \-\-extract
-Extract matched files to the current directory
+Extract matched files to the current directory.
 
 .TP
 .B \-F, \-\-files
-Use files database to search for files before deciding to download
+Use files database to search for files before deciding to download.
 
 .TP
 .B \-h, \-\-help
-Print help information
+Print help information.
 
 .TP
 .B \-q, \-\-quiet
-Print file names instead of file content
+Print file names instead of file content.
 
 .TP
 .B \-Q, \-\-query
-Use local database to search for files before deciding to download
+Use local database to search for files before deciding to download.
 
 .TP
 .B \-r, \-\-root <path>
-Set an alternative root directory
+Set an alternative root directory.
 
 .TP
 .B \-V, \-\-version
-Print version information
+Print version information.
 
 .TP
 .B \-x, \-\-regex
-Enable searching using regular expressions
+Enable searching using regular expressions.
 
-.SH Examples
+.SH EXAMPLES
 .TP
-paccat grub \-\- etc/default/grub
+.B paccat grub \-\- etc/default/grub
 Print the contents of 'etc/default/grub' from the grub package.
 
 .TP
-paccat pacman \-\- pacman.conf
+.B paccat pacman \-\- pacman.conf
 Print the contents of the first file named 'pacman.conf' from the pacman package.
 
 .TP
-paccat \-F \-\- pacman.conf
+.B paccat \-F \-\- pacman.conf
 Print the contents of the first file named 'pacman.conf' in the repos
 
 .TP
-paccat \-x pacman mkinitcpio \-\- '\\.conf^'
+.B paccat \-x pacman mkinitcpio \-\- '\\.conf^'
 Print the contents of all files ending in '.conf' from both the pacman and mkinitcpio packages.
 
 .TP
-paccat ~/pkgs/my\-pkg\-1.0.0\-1.pkg.tar.zst \-\- myfile
+.B paccat ~/pkgs/my\-pkg\-1.0.0\-1.pkg.tar.zst \-\- myfile
 Print the contents of 'myfile' from a package tarball.
 
 .TP
-paccat https://archlinux.org/packages/extra/x86_64/git/download \-\- git\-blame.1.gz
+.B paccat https://archlinux.org/packages/extra/x86_64/git/download \-\- git\-blame.1.gz
 Download and print the contents of 'git-blame.1.gz' from the git package.";
 
 .SH SEE ALSO
