@@ -93,7 +93,8 @@ pub struct Args {
     #[clap(
         required = true,
         raw = true,
-        value_name = "file",
+        name = "file", // fix shell completion
+        value_name = "files",
         about = "Files to search for"
     )]
     pub files: Vec<String>,
