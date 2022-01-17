@@ -8,7 +8,7 @@ use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::unistd::isatty;
 use regex::RegexSet;
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::{self, Read, Seek, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
@@ -145,7 +145,7 @@ where
                             cur_file = file;
 
                             let filename = cur_file.rsplit('/').next().unwrap();
-                            let extract_file = OpenOptions::new()
+                            let extract_file = File::options()
                                 .write(true)
                                 .create(true)
                                 .truncate(true)
