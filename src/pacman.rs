@@ -5,7 +5,9 @@ use alpm::{
 };
 use alpm_utils::DbListExt;
 use alpm_utils::Targ;
+use anyhow::anyhow;
 use anyhow::{Context, Result};
+use nix::unistd::Uid;
 
 pub fn alpm_init(args: &Args) -> Result<Alpm> {
     let mut conf =
@@ -44,7 +46,13 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
 
     if args.refresh > 0 {
         eprintln!("synchronising package databases...");
-        alpm.syncdbs_mut().update(args.refresh > 1)?;
+        let res = alpm.syncdbs_mut().update(args.refresh > 1);
+
+        if !Uid::current().is_root() {
+            res.map_err(|e| anyhow!("are you root?").context(e))?;
+        }
+
+        res?;
     }
 
     for db in alpm.syncdbs() {
@@ -106,11 +114,13 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
         return;
     }
 
-    if let DownloadEvent::Completed(c) = event.event() { match c.result {
-        DownloadResult::Success => eprintln!("{} downloaded", file),
-        DownloadResult::UpToDate => eprintln!("{} is up to date", file),
-        DownloadResult::Failed => eprintln!("{} failed to download", file),
-    } }
+    if let DownloadEvent::Completed(c) = event.event() {
+        match c.result {
+            DownloadResult::Success => eprintln!("{} downloaded", file),
+            DownloadResult::UpToDate => eprintln!("{} is up to date", file),
+            DownloadResult::Failed => eprintln!("{} failed to download", file),
+        }
+    }
 }
 
 fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
