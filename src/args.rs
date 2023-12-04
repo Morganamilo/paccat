@@ -2,8 +2,9 @@ use clap::Parser;
 use clap::ValueHint;
 
 const TEMPLATE: &str = "usage:
-    paccat [options] -<Q|F> [targets] -- <files>
+    paccat [options] <target> <files>
     paccat [options] <targets> -- <files>
+    paccat [options] -<Q|F> [targets] -- <files>
 
 a target can be specified as:
     <pkgname>, <repo>/<pkgname>, <url> or <file>.
