@@ -25,6 +25,24 @@ files can be specified as just the filename or the full path.
 )]
 /// Print pacman package files
 pub struct Args {
+    #[arg(short = 'F', long = "files")]
+    /// Use files database to search for files before deciding to download
+    pub filedb: bool,
+    #[arg(short = 'Q', conflicts_with = "filedb", long = "query")]
+    /// Use local database to search for files before deciding to download
+    pub localdb: bool,
+    #[arg(short, long, value_name = "path")]
+    /// Set an alternative root directory
+    pub root: Option<String>,
+    #[arg(short = 'b', long, value_name = "path")]
+    /// Set an alternative database location
+    pub dbpath: Option<String>,
+    #[arg(long, short = 'y', action = ArgAction::Count)]
+    /// Download fresh package databases from the server
+    pub refresh: u8,
+    #[arg(long, value_name = "path")]
+    /// Set an alternative cache directory
+    pub cachedir: Option<String>,
     #[arg(short = 'x', long)]
     /// Enable searching using regular expressions
     pub regex: bool,
@@ -40,27 +58,9 @@ pub struct Args {
     #[arg(long)]
     ///Print binary files
     pub binary: bool,
-    #[arg(short = 'F', long = "files")]
-    /// Use files database to search for files before deciding to download
-    pub filedb: bool,
-    #[arg(long, short = 'y', action = ArgAction::Count)]
-    /// Download fresh package databases from the server
-    pub refresh: u8,
-    #[arg(short = 'Q', conflicts_with = "filedb", long = "query")]
-    /// Use local database to search for files before deciding to download
-    pub localdb: bool,
-    #[arg(short, long, value_name = "path")]
-    /// Set an alternative root directory
-    pub root: Option<String>,
-    #[arg(short = 'b', long, value_name = "path")]
-    /// Set an alternative database location
-    pub dbpath: Option<String>,
     #[arg(long, value_name = "file")]
     /// Use an alternative pacman.conf
     pub config: Option<String>,
-    #[arg(long, value_name = "path")]
-    /// Set an alternative cache directory
-    pub cachedir: Option<String>,
     #[arg(long, short, conflicts_with = "extract")]
     /// Install matched files to the system
     pub install: bool,

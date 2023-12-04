@@ -14,7 +14,13 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
         .dbpath
         .as_deref()
         .unwrap_or_else(|| conf.db_path.as_str());
-    let mut alpm = Alpm::new(conf.root_dir.as_str(), dbpath)?;
+    let mut alpm = Alpm::new(conf.root_dir.as_str(), dbpath).with_context(|| {
+        format!(
+            "failed to initialize alpm (root: {}, dbpath: {})",
+            conf.root_dir.as_str(),
+            dbpath
+        )
+    })?;
 
     if args.filedb {
         alpm.set_dbext(".files");
