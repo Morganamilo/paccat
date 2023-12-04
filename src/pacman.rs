@@ -30,26 +30,17 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     alpm.set_event_cb((), event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
-    let mut cachedirs = alpm
-        .cachedirs()
-        .into_iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
 
     if let Some(dir) = args.cachedir.as_deref() {
-        cachedirs.insert(0, dir.to_string())
+        alpm.add_cachedir(dir)?;
     } else {
-        cachedirs.insert(
-            0,
-            std::env::temp_dir()
-                .join("paccat")
-                .to_str()
-                .context("tempdir is not a str")?
-                .to_string(),
-        );
+        let tmp = std::env::temp_dir()
+            .join("paccat")
+            .to_str()
+            .context("tempdir is not a str")?
+            .to_string();
+        alpm.add_cachedir(tmp)?;
     }
-
-    alpm.set_cachedirs(cachedirs.into_iter())?;
 
     if args.refresh > 0 {
         eprintln!("synchronising package databases...");
