@@ -97,6 +97,13 @@ fn run() -> Result<i32> {
     let mut ret = 0;
     let stdout = io::stdout();
 
+    if !args.localdb && !args.filedb && args.targets.is_empty() {
+        bail!("no targets specified (use -h for help)");
+    }
+    if args.files.is_empty() {
+        bail!("no files specified (use -h for help)");
+    }
+
     args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
     args.binary |= args.extract;
 

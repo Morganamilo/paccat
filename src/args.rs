@@ -57,14 +57,14 @@ pub struct Args {
     /// Set an alternative cache directory
     pub cachedir: Option<String>,
     #[arg(
-        required_unless_present_any = ["localdb", "filedb"],
+        value_name = "targets",
         value_hint = ValueHint::AnyPath,
     )]
     /// List of packages, package files, or package urls
     pub targets: Vec<String>,
     #[arg(
-        required = true,
-        raw = true,
+        last = true,
+        value_name = "files",
         value_hint = ValueHint::AnyPath,
     )]
     pub files: Vec<String>,
