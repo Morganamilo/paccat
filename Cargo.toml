@@ -17,7 +17,7 @@ pacmanconf = "2.0.0"
 
 anyhow = "1.0.75"
 compress-tools = "0.14.3"
-nix = { version = "0.27.1", features = ["fs", "signal"] }
+nix = { version = "0.27.1", features = ["fs", "signal", "user"] }
 regex = "1.10.2"
 clap = { version = "4.4.10", default-features = false, features = ["std", "cargo", "derive", "help"]}
 

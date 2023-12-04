@@ -57,6 +57,9 @@ pub struct Args {
     #[arg(long, value_name = "path")]
     /// Set an alternative cache directory
     pub cachedir: Option<String>,
+    #[arg(long, short, conflicts_with = "extract")]
+    /// Install matched files to the system
+    pub install: bool,
     #[arg(
         value_name = "targets",
         value_hint = ValueHint::AnyPath,

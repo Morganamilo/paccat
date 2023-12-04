@@ -2,14 +2,17 @@ use crate::args::Args;
 use crate::pacman::{alpm_init, get_dbpkg, get_download_url};
 use alpm::{Alpm, Package};
 use alpm_utils::DbListExt;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Error, Result};
 use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
+use nix::sys::stat::{umask, Mode};
 use nix::unistd::isatty;
 use regex::RegexSet;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, Write};
+use std::os::unix::fs::fchown;
+use std::os::unix::fs::OpenOptionsExt;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
 
@@ -80,13 +83,21 @@ impl MatchWith {
     }
 }
 
+fn print_error(err: Error) {
+    eprint!("error");
+    for link in err.chain() {
+        eprint!(": {}", link);
+    }
+    eprintln!();
+}
+
 fn main() {
     unsafe { signal(Signal::SIGPIPE, SigHandler::SigDfl).unwrap() };
 
     match run() {
         Ok(i) => std::process::exit(i),
         Err(e) => {
-            eprintln!("error: {}", e);
+            print_error(e);
             std::process::exit(1);
         }
     }
@@ -109,7 +120,7 @@ fn run() -> Result<i32> {
     }
 
     args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
-    args.binary |= args.extract;
+    args.binary |= args.extract || args.install;
 
     let files = args
         .files
@@ -121,6 +132,10 @@ fn run() -> Result<i32> {
     let alpm = alpm_init(&args)?;
 
     let pkgs = get_targets(&alpm, &args, &mut matcher)?;
+
+    if args.install {
+        umask(Mode::empty());
+    }
 
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
@@ -139,57 +154,61 @@ where
     let mut stdout = stdout.lock();
     let mut state = EntryState::Skip;
     let mut found = 0;
-    let mut cur_file = String::new();
+    let mut filename = String::new();
     let mut cur_extract_file: Option<File> = None;
 
     for content in archive {
         match content {
-            ArchiveContents::StartOfEntry(file, _) => {
+            ArchiveContents::StartOfEntry(mut file, stat) => {
+                filename = file.rsplit('/').next().unwrap().to_string();
+
                 if matcher.is_match(&file, !args.all) {
                     found += 1;
 
-                    if args.quiet || args.extract {
+                    if args.quiet || args.extract || args.install {
                         writeln!(stdout, "{}", file)?;
 
-                        if args.extract {
+                        if args.extract || args.install {
                             state = EntryState::FirstChunk;
-                            cur_file = file;
+                            let open_file = if args.install {
+                                file.insert(0, '/');
+                                file.as_str()
+                            } else {
+                                filename.as_str()
+                            };
 
-                            let filename = cur_file.rsplit('/').next().unwrap();
+                            let exists = !args.install || Path::new(open_file).exists();
+
                             let extract_file = OpenOptions::new()
                                 .write(true)
                                 .create(true)
                                 .truncate(true)
-                                .open(filename)
-                                .with_context(|| format!("failed to open target {}", filename))?;
+                                .mode(stat.st_mode)
+                                .open(open_file)
+                                .with_context(|| format!("failed to open {}", open_file))?;
+
+                            if !exists {
+                                fchown(&extract_file, Some(stat.st_uid), Some(stat.st_gid))
+                                    .with_context(|| format!("failed to chown {}", open_file))?;
+                            }
+
                             cur_extract_file = Some(extract_file);
                         }
                     } else {
                         state = EntryState::FirstChunk;
-                        cur_file = file;
                     }
                 }
             }
-            ArchiveContents::DataChunk(v) if state == EntryState::FirstChunk => {
-                if !args.binary && is_binary(&v) {
+            ArchiveContents::DataChunk(data) if state == EntryState::FirstChunk => {
+                if !args.binary && is_binary(&data) {
                     state = EntryState::Skip;
-                    eprintln!("{} is a binary file -- use --binary to print", cur_file);
+                    eprintln!("{} is a binary file -- use --binary to print", filename);
                 } else {
-                    state = EntryState::Reading;
-
-                    if let Some(extract_file) = &mut cur_extract_file {
-                        extract_file.write_all(&v)?;
-                    } else {
-                        stdout.write_all(&v)?;
-                    }
+                    read_chunk(&mut state, &mut cur_extract_file, &mut stdout, &data)?;
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
-                if let Some(extract_file) = &mut cur_extract_file {
-                    extract_file.write_all(&v)?;
-                } else {
-                    stdout.write_all(&v)?;
-                }
+                read_chunk(&mut state, &mut cur_extract_file, &mut stdout, &v)?;
             }
             ArchiveContents::DataChunk(_) => (),
             ArchiveContents::EndOfEntry => state = EntryState::Skip,
@@ -206,6 +225,20 @@ where
     };
 
     Ok(ret)
+}
+
+fn read_chunk(
+    state: &mut EntryState,
+    cur_extract_file: &mut Option<File>,
+    stdout: &mut io::StdoutLock<'_>,
+    data: &[u8],
+) -> Result<(), anyhow::Error> {
+    *state = EntryState::Reading;
+    Ok(if let Some(extract_file) = cur_extract_file {
+        extract_file.write_all(&data)?;
+    } else {
+        stdout.write_all(&data)?;
+    })
 }
 
 fn is_binary(data: &[u8]) -> bool {
