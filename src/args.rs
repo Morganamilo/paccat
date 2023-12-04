@@ -1,3 +1,4 @@
+use clap::ArgAction;
 use clap::Parser;
 use clap::ValueHint;
 
@@ -42,6 +43,9 @@ pub struct Args {
     #[arg(short = 'F', long = "files")]
     /// Use files database to search for files before deciding to download
     pub filedb: bool,
+    #[arg(long, short = 'y', action = ArgAction::Count)]
+    /// Download fresh package databases from the server
+    pub refresh: u8,
     #[arg(short = 'Q', conflicts_with = "filedb", long = "query")]
     /// Use local database to search for files before deciding to download
     pub localdb: bool,

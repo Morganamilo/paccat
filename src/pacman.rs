@@ -31,6 +31,11 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     } else {
         alpm.add_cachedir(std::env::temp_dir().join("paccat").as_os_str().as_bytes())?;
     }
+
+    if args.refresh > 0 {
+        eprintln!("synchronising package databases...");
+        alpm.syncdbs_mut().update(args.refresh > 1)?;
+    }
     Ok(alpm)
 }
 
@@ -55,12 +60,15 @@ pub fn get_download_url(pkg: Package) -> Result<String> {
 }
 
 fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
+    if file.ends_with(".sig") {
+        return;
+    }
+
     match event.event() {
-        DownloadEvent::Init(_) => eprintln!("downloading {}...", file),
-        DownloadEvent::Completed(e) => match e.result {
-            DownloadResult::Failed => eprintln!("{} failed to download", file),
+        DownloadEvent::Completed(c) => match c.result {
+            DownloadResult::Success => eprintln!("{} downloaded", file),
             DownloadResult::UpToDate => eprintln!("{} is up to date", file),
-            _ => (),
+            DownloadResult::Failed => eprintln!("{} failed to download", file),
         },
         _ => (),
     }
