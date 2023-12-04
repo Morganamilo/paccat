@@ -10,7 +10,7 @@ use nix::sys::stat::{umask, Mode};
 use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
-use std::fs::{create_dir_all, File, OpenOptions};
+use std::fs::{create_dir_all, File};
 use std::io::{self, Read, Seek, Stdout, StdoutLock, Write};
 use std::mem::take;
 use std::os::unix::fs::fchown;
@@ -258,7 +258,7 @@ where
                                 }
                             }
 
-                            let extract_file = OpenOptions::new()
+                            let extract_file = File::options()
                                 .write(true)
                                 .create(true)
                                 .truncate(true)
