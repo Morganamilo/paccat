@@ -1,6 +1,4 @@
-use clap::ArgAction;
-use clap::Parser;
-use clap::ValueHint;
+use clap::{ArgAction, Parser, ValueEnum, ValueHint};
 
 const TEMPLATE: &str = "usage:
     paccat [options] <target> <files>
@@ -15,6 +13,14 @@ files can be specified as just the filename or the full path.
 {about}
 
 {options}";
+
+#[derive(Copy, Clone, Default, Debug, ValueEnum)]
+pub enum ColorWhen {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -43,6 +49,9 @@ pub struct Args {
     #[arg(long, value_name = "path")]
     /// Set an alternative cache directory
     pub cachedir: Option<String>,
+    /// Specify when to enable coloring
+    #[arg(long, value_name = "when", value_enum, default_value_t = ColorWhen::Auto)]
+    pub color: ColorWhen,
     #[arg(short = 'x', long)]
     /// Enable searching using regular expressions
     pub regex: bool,

@@ -22,6 +22,10 @@ Print pacman package files.
 paccat prints files from packages independent of your system by downloading the needed
 packages and extracting the needed files.
 
+
+.SH SYNTAX HIGHLIGHTING
+paccat will use \fIbat\fR for syntax highlighting if it is installed.
+
 .SH OPTIONS
 .TP
 
@@ -49,6 +53,10 @@ Set an alternative cache directory.
 .TP
 .B \-\-config <file>
 Use an alternative pacman.conf.
+
+.TP
+.B \-\-color <when>
+Specify when to enable coloring. Valid options are always, never, or auto.
 
 .TP
 .B \-e, \-\-extract

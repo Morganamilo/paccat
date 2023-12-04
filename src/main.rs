@@ -119,6 +119,7 @@ fn run() -> Result<i32> {
     let mut args = args::Args::parse();
     let mut ret = 0;
     let stdout = io::stdout();
+    let is_tty = isatty(stdout.as_raw_fd()).unwrap_or(false);
 
     if !args.targets.is_empty() && args.files.is_empty() {
         args.files = args.targets.split_off(1);
@@ -131,8 +132,14 @@ fn run() -> Result<i32> {
         bail!("no files specified (use -h for help)");
     }
 
-    args.binary |= !isatty(stdout.as_raw_fd()).unwrap_or(false);
+    args.binary |= !is_tty;
     args.binary |= args.extract || args.install;
+
+    let color = match args.color {
+        args::ColorWhen::Auto => is_tty,
+        args::ColorWhen::Always => false,
+        args::ColorWhen::Never => true,
+    };
 
     let files = args
         .files
@@ -152,7 +159,7 @@ fn run() -> Result<i32> {
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
         let archive = ArchiveIterator::from_read(file)?;
-        ret |= dump_files(archive, &mut matcher, &args, &alpm)?;
+        ret |= dump_files(archive, &mut matcher, &args, color, &alpm)?;
     }
 
     Ok(ret)
@@ -200,6 +207,7 @@ fn dump_files<R>(
     archive: ArchiveIterator<R>,
     matcher: &mut Match,
     args: &Args,
+    color: bool,
     alpm: &Alpm,
 ) -> Result<i32>
 where
@@ -211,7 +219,8 @@ where
     let mut found = 0;
     let mut filename = String::new();
 
-    let use_bat = !args.quiet
+    let use_bat = color
+        && !args.quiet
         && !args.extract
         && !args.install
         && Command::new("bat").arg("-h").status().is_ok();
