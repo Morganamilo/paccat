@@ -133,7 +133,7 @@ where
 
     for content in archive {
         match content {
-            ArchiveContents::StartOfEntry(file) => {
+            ArchiveContents::StartOfEntry(file, _) => {
                 if matcher.is_match(&file, !args.all) {
                     found += 1;
 
