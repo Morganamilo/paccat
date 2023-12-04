@@ -1,4 +1,5 @@
 use clap::Parser;
+use clap::ValueHint;
 
 const TEMPLATE: &str = "usage:
     paccat [options] -<Q|F> [targets] -- <files>
@@ -57,15 +58,14 @@ pub struct Args {
     pub cachedir: Option<String>,
     #[arg(
         required_unless_present_any = ["localdb", "filedb"],
-        value_name = "target",
+        value_hint = ValueHint::AnyPath,
     )]
     /// List of packages, package files, or package urls
     pub targets: Vec<String>,
     #[arg(
         required = true,
         raw = true,
-        name = "file", // fix shell completion
-        value_name = "files",
+        value_hint = ValueHint::AnyPath,
     )]
     pub files: Vec<String>,
 }
