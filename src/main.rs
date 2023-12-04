@@ -137,8 +137,8 @@ fn run() -> Result<i32> {
 
     let color = match args.color {
         args::ColorWhen::Auto => is_tty,
-        args::ColorWhen::Always => false,
-        args::ColorWhen::Never => true,
+        args::ColorWhen::Always => true,
+        args::ColorWhen::Never => false,
     };
 
     let files = args
@@ -177,6 +177,7 @@ fn open_output(
         | (output @ Output::None | output @ Output::Stdout(_), true) => {
             let mut child = Command::new("bat")
                 .arg("-pp")
+                .arg("--color=always")
                 .arg("--file-name")
                 .arg(filename)
                 .stdin(Stdio::piped())
