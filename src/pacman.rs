@@ -9,16 +9,16 @@ use std::iter;
 use std::os::unix::ffi::OsStrExt;
 
 pub fn alpm_init(args: &Args) -> Result<Alpm> {
-    let conf = pacmanconf::Config::with_opts(None, args.config.as_deref(), args.root.as_deref())?;
-    let dbpath = args
-        .dbpath
-        .as_deref()
-        .unwrap_or_else(|| conf.db_path.as_str());
-    let mut alpm = Alpm::new(conf.root_dir.as_str(), dbpath).with_context(|| {
+    let mut conf =
+        pacmanconf::Config::with_opts(None, args.config.as_deref(), args.root.as_deref())?;
+    if let Some(dbpath) = args.dbpath.clone() {
+        conf.db_path = dbpath;
+    }
+    let mut alpm = Alpm::new(conf.root_dir.as_str(), conf.db_path.as_str()).with_context(|| {
         format!(
             "failed to initialize alpm (root: {}, dbpath: {})",
             conf.root_dir.as_str(),
-            dbpath
+            conf.db_path,
         )
     })?;
 

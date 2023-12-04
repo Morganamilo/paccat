@@ -12,7 +12,7 @@ include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 alpm = "2.2.2"
-alpm-utils = "2.0.0"
+alpm-utils = { version = "2.0.0", features = ["conf"] }
 pacmanconf = "2.0.0"
 
 anyhow = "1.0.75"
