@@ -285,7 +285,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
         }
     } else {
         for targ in &args.targets {
-            if let Ok(pkg) = get_dbpkg(alpm, targ) {
+            if let Ok(pkg) = get_dbpkg(alpm, targ, args.localdb) {
                 if pkg.files().files().is_empty() || want_pkg(alpm, pkg, matcher) {
                     repo.push(pkg);
                 }

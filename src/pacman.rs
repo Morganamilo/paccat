@@ -45,12 +45,14 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     Ok(alpm)
 }
 
-pub fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str) -> Result<Package<'a>> {
-    let target = Targ::from(target_str);
-    let pkg = alpm
-        .syncdbs()
-        .find_target_satisfier(target)
-        .with_context(|| format!("could not find package: {}", target_str))?;
+pub fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str, localdb: bool) -> Result<Package<'a>> {
+    let pkg = if localdb {
+        alpm.localdb().pkg(target_str).ok()
+    } else {
+        let target = Targ::from(target_str);
+        alpm.syncdbs().find_target_satisfier(target)
+    };
+    let pkg = pkg.with_context(|| format!("could not find package: {}", target_str))?;
     Ok(pkg)
 }
 
