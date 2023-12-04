@@ -1,8 +1,8 @@
 [package]
 name = "paccat"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["morganamilo <morganamilo@archlinux.org>"]
-edition = "2018"
+edition = "2021"
 
 description = "Print pacman package files"
 repository = "http://github.com/Morganamilo/paccat"
