@@ -7,7 +7,7 @@ use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::sys::stat::{umask, Mode};
-use nix::unistd::isatty;
+use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File, OpenOptions};
@@ -203,7 +203,7 @@ where
                                     format!("failed to open {}", open_file.display())
                                 })?;
 
-                            if !exists {
+                            if !exists && Uid::current().is_root() {
                                 fchown(&extract_file, Some(stat.st_uid), Some(stat.st_gid))
                                     .with_context(|| {
                                         format!("failed to chown {}", open_file.display())
