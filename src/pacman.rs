@@ -106,14 +106,11 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
         return;
     }
 
-    match event.event() {
-        DownloadEvent::Completed(c) => match c.result {
-            DownloadResult::Success => eprintln!("{} downloaded", file),
-            DownloadResult::UpToDate => eprintln!("{} is up to date", file),
-            DownloadResult::Failed => eprintln!("{} failed to download", file),
-        },
-        _ => (),
-    }
+    if let DownloadEvent::Completed(c) = event.event() { match c.result {
+        DownloadResult::Success => eprintln!("{} downloaded", file),
+        DownloadResult::UpToDate => eprintln!("{} is up to date", file),
+        DownloadResult::Failed => eprintln!("{} failed to download", file),
+    } }
 }
 
 fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {

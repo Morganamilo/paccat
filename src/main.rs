@@ -171,7 +171,7 @@ fn open_output(
             let mut child = Command::new("bat")
                 .arg("-pp")
                 .arg("--file-name")
-                .arg(&filename)
+                .arg(filename)
                 .stdin(Stdio::piped())
                 .spawn()?;
 
@@ -186,9 +186,7 @@ fn open_output(
 fn close_outout(output: &mut Output) -> Result<()> {
     if let Output::Bat(mut child, stdin) = take(output) {
         drop(stdin);
-        let status = child
-            .wait()
-            .with_context(|| format!("failed to wait for bat"))?;
+        let status = child.wait().context("failed to wait for bat")?;
         ensure!(
             status.success(),
             "bat failed to run (exited {})",
@@ -311,9 +309,9 @@ fn read_chunk(
 ) -> Result<(), anyhow::Error> {
     *state = EntryState::Reading;
     match output {
-        Output::Stdout(stdout) => stdout.write_all(&data)?,
-        Output::Bat(_, stdin) => stdin.write_all(&data)?,
-        Output::File(file) => file.write_all(&data)?,
+        Output::Stdout(stdout) => stdout.write_all(data)?,
+        Output::Bat(_, stdin) => stdin.write_all(data)?,
+        Output::File(file) => file.write_all(data)?,
         Output::None => (),
     };
     Ok(())
