@@ -9,7 +9,7 @@ use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::sys::stat::{umask, Mode};
 use nix::unistd::isatty;
 use regex::RegexSet;
-use std::fs::{File, OpenOptions};
+use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::{self, Read, Seek, Write};
 use std::os::unix::fs::fchown;
 use std::os::unix::fs::OpenOptionsExt;
@@ -172,12 +172,20 @@ where
                             state = EntryState::FirstChunk;
                             let open_file = if args.install {
                                 file.insert(0, '/');
-                                file.as_str()
+                                Path::new(&file)
                             } else {
-                                filename.as_str()
+                                Path::new(&filename)
                             };
 
-                            let exists = !args.install || Path::new(open_file).exists();
+                            let exists = !args.install || open_file.exists();
+
+                            if !exists {
+                                if let Some(parent) = open_file.parent() {
+                                    create_dir_all(parent).with_context(|| {
+                                        format!("failed to mkdir {}", parent.display())
+                                    })?;
+                                }
+                            }
 
                             let extract_file = OpenOptions::new()
                                 .write(true)
@@ -185,11 +193,15 @@ where
                                 .truncate(true)
                                 .mode(stat.st_mode)
                                 .open(open_file)
-                                .with_context(|| format!("failed to open {}", open_file))?;
+                                .with_context(|| {
+                                    format!("failed to open {}", open_file.display())
+                                })?;
 
                             if !exists {
                                 fchown(&extract_file, Some(stat.st_uid), Some(stat.st_gid))
-                                    .with_context(|| format!("failed to chown {}", open_file))?;
+                                    .with_context(|| {
+                                        format!("failed to chown {}", open_file.display())
+                                    })?;
                             }
 
                             cur_extract_file = Some(extract_file);
