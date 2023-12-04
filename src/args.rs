@@ -1,6 +1,4 @@
-use clap::{AppSettings, Parser};
-
-const ABOUT: &str = "Print pacman package files";
+use clap::Parser;
 
 const TEMPLATE: &str = "usage:
     paccat [options] -<Q|F> [targets] -- <files>
@@ -16,86 +14,58 @@ files can be specified as just the filename or the full path.
 {options}";
 
 #[derive(Parser, Debug)]
-#[clap(about = ABOUT,
-    help_template = TEMPLATE,
+#[command(
+    help_template(TEMPLATE),
     version = concat!("v", clap::crate_version!()),
-    setting(AppSettings::AllArgsOverrideSelf),
-    setting(AppSettings::ArgRequiredElseHelp),
+    args_override_self = true,
+    arg_required_else_help = true,
 )]
+/// Print pacman package files
 pub struct Args {
-    #[clap(
-        short = 'x',
-        long,
-        about = "Enable searching using regular expressions"
-    )]
+    #[arg(short = 'x', long)]
+    /// Enable searching using regular expressions
     pub regex: bool,
-    #[clap(
-        short,
-        long,
-        about = "print all matches of files instead of just the first"
-    )]
+    #[arg(short, long)]
+    /// Print all matches of files instead of just the first
     pub all: bool,
-
-    #[clap(
-        short = 'e',
-        long,
-        about = "Extract matched files to the current directory"
-    )]
+    #[arg(short = 'e', long)]
+    /// Extract matched files to the current directory
     pub extract: bool,
-    #[clap(short, long, about = "Print file names instead of file content")]
+    #[arg(short, long)]
+    /// Print file names instead of file content
     pub quiet: bool,
-    #[clap(long, about = "Print binary files")]
+    #[arg(long)]
+    ///Print binary files
     pub binary: bool,
-    #[clap(
-        short = 'F',
-        long = "files",
-        about = "Use files database to search for files before deciding to download"
-    )]
+    #[arg(short = 'F', long = "files")]
+    /// Use files database to search for files before deciding to download
     pub filedb: bool,
-    #[clap(
-        short = 'Q',
-        conflicts_with = "filedb",
-        long = "query",
-        about = "Use local database to search for files before deciding to download"
-    )]
+    #[arg(short = 'Q', conflicts_with = "filedb", long = "query")]
+    /// Use local database to search for files before deciding to download
     pub localdb: bool,
-
-    #[clap(
-        short,
-        long,
-        value_name = "path",
-        about = "Set an alternative root directory"
-    )]
+    #[arg(short, long, value_name = "path")]
+    /// Set an alternative root directory
     pub root: Option<String>,
-    #[clap(
-        short = 'b',
-        long,
-        value_name = "path",
-        about = "Set an alternative database location"
-    )]
+    #[arg(short = 'b', long, value_name = "path")]
+    /// Set an alternative database location
     pub dbpath: Option<String>,
-    #[clap(long, value_name = "file", about = "Use an alternative pacman.conf")]
+    #[arg(long, value_name = "file")]
+    /// Use an alternative pacman.conf
     pub config: Option<String>,
-    #[clap(
-        long,
-        value_name = "path",
-        about = "Set an alternative cache directory"
-    )]
+    #[arg(long, value_name = "path")]
+    /// Set an alternative cache directory
     pub cachedir: Option<String>,
-
-    #[clap(
+    #[arg(
         required_unless_present_any = ["localdb", "filedb"],
         value_name = "target",
-        about = "List of packages, package files, or package urls"
     )]
+    /// List of packages, package files, or package urls
     pub targets: Vec<String>,
-
-    #[clap(
+    #[arg(
         required = true,
         raw = true,
         name = "file", // fix shell completion
         value_name = "files",
-        about = "Files to search for"
     )]
     pub files: Vec<String>,
 }

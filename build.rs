@@ -1,5 +1,5 @@
-use clap::{App, IntoApp};
-use clap_generate::{generate_to, Shell};
+use clap::CommandFactory;
+use clap_complete::Shell;
 
 include!("src/args.rs");
 
@@ -11,9 +11,10 @@ fn main() {
         Some(out_dir) => out_dir,
     };
 
-    let mut app: App = Args::into_app();
+    let mut app = Args::command();
+    let name = app.get_name().to_string();
 
-    generate_to(Shell::Bash, &mut app, env!("CARGO_PKG_NAME"), &directory).unwrap();
-    generate_to(Shell::Fish, &mut app, env!("CARGO_PKG_NAME"), &directory).unwrap();
-    generate_to(Shell::Zsh, &mut app, env!("CARGO_PKG_NAME"), &directory).unwrap();
+    clap_complete::generate_to(Shell::Bash, &mut app, &name, &directory).unwrap();
+    clap_complete::generate_to(Shell::Fish, &mut app, &name, &directory).unwrap();
+    clap_complete::generate_to(Shell::Zsh, &mut app, &name, &directory).unwrap();
 }
