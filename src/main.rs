@@ -140,13 +140,18 @@ fn run() -> Result<i32> {
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
         let archive = ArchiveIterator::from_read(file)?;
-        ret |= dump_files(archive, &mut matcher, &args)?;
+        ret |= dump_files(archive, &mut matcher, &args, &alpm)?;
     }
 
     Ok(ret)
 }
 
-fn dump_files<R>(archive: ArchiveIterator<R>, matcher: &mut Match, args: &Args) -> Result<i32>
+fn dump_files<R>(
+    archive: ArchiveIterator<R>,
+    matcher: &mut Match,
+    args: &Args,
+    alpm: &Alpm,
+) -> Result<i32>
 where
     R: Read + Seek,
 {
@@ -171,7 +176,7 @@ where
                         if args.extract || args.install {
                             state = EntryState::FirstChunk;
                             let open_file = if args.install {
-                                file.insert(0, '/');
+                                file.insert_str(0, alpm.root());
                                 Path::new(&file)
                             } else {
                                 Path::new(&filename)
