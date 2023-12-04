@@ -11,7 +11,7 @@ use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File};
-use std::io::{self, Read, Seek, Stdout, StdoutLock, Write};
+use std::io::{self, stdin, BufRead, Read, Seek, Stdout, StdoutLock, Write};
 use std::mem::take;
 use std::os::unix::fs::fchown;
 use std::os::unix::fs::OpenOptionsExt;
@@ -115,6 +115,23 @@ fn main() {
     }
 }
 
+fn read_stdin(values: &mut Vec<String>) -> Result<()> {
+    if let Some(index) = values.iter().position(|s| s == "-") {
+        values.remove(index);
+
+        if isatty(stdin().as_raw_fd()).unwrap_or(false) {
+            bail!("argument '-' specified without input on stdin");
+        }
+
+        for line in stdin().lock().lines() {
+            let line = line.context("failed to read stdin")?;
+            values.push(line);
+        }
+    }
+
+    Ok(())
+}
+
 fn run() -> Result<i32> {
     let mut args = args::Args::parse();
     let mut ret = 0;
@@ -131,6 +148,9 @@ fn run() -> Result<i32> {
     if args.files.is_empty() {
         bail!("no files specified (use -h for help)");
     }
+
+    read_stdin(&mut args.targets)?;
+    read_stdin(&mut args.files)?;
 
     args.binary |= !is_tty;
     args.binary |= args.extract || args.install;
