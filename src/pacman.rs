@@ -5,8 +5,6 @@ use alpm::{
 use alpm_utils::DbListExt;
 use alpm_utils::Targ;
 use anyhow::{Context, Result};
-use std::iter;
-use std::os::unix::ffi::OsStrExt;
 
 pub fn alpm_init(args: &Args) -> Result<Alpm> {
     let mut conf =
@@ -31,12 +29,26 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     alpm.set_event_cb((), event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
+    let mut cachedirs = alpm
+        .cachedirs()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
 
     if let Some(dir) = args.cachedir.as_deref() {
-        alpm.set_cachedirs(iter::once(dir))?;
+        cachedirs.insert(0, dir.to_string())
     } else {
-        alpm.add_cachedir(std::env::temp_dir().join("paccat").as_os_str().as_bytes())?;
+        cachedirs.insert(
+            0,
+            std::env::temp_dir()
+                .join("paccat")
+                .to_str()
+                .context("tempdir is not a str")?
+                .to_string(),
+        );
     }
+
+    alpm.set_cachedirs(cachedirs.into_iter())?;
 
     if args.refresh > 0 {
         eprintln!("synchronising package databases...");
