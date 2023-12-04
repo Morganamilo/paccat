@@ -30,53 +30,8 @@ paccat will use \fIbat\fR for syntax highlighting if it is installed.
 .TP
 
 .TP
-.B \-a, \-\-all
-print all matches of files instead of just the first.
-
-.TP
-.B \-b, \-\-dbpath <path>
-Set an alternative database location.
-
-.TP
-.B \-y, \-\-refresh
-Download fresh package databases from the server. Pass twice to force download even if
-databases are up to date.
-
-.TP
-.B \-\-binary
-Print binary files
-
-.TP
-.B \-\-cachedir <path>
-Set an alternative cache directory.
-
-.TP
-.B \-\-config <file>
-Use an alternative pacman.conf.
-
-.TP
-.B \-\-color <when>
-Specify when to enable coloring. Valid options are always, never, or auto.
-
-.TP
-.B \-e, \-\-extract
-Extract matched files to the current directory.
-
-.TP
-.B \-i, \-\-install
-Install matched files to the system.
-
-.TP
 .B \-F, \-\-files
 Use files database to search for files before deciding to download.
-
-.TP
-.B \-h, \-\-help
-Print help information.
-
-.TP
-.B \-q, \-\-quiet
-Print file names instead of file content.
 
 .TP
 .B \-Q, \-\-query
@@ -87,12 +42,57 @@ Use local database to search for files before deciding to download.
 Set an alternative root directory.
 
 .TP
-.B \-V, \-\-version
-Print version information.
+.B \-b, \-\-dbpath <path>
+Set an alternative database location.
+
+.TP
+.B \-\-config <file>
+Use an alternative pacman.conf.
+
+.TP
+.B \-\-color <when>
+Specify when to enable coloring. Valid options are always, never, or auto.
+
+.TP
+.B \-y, \-\-refresh
+Download fresh package databases from the server. Pass twice to force download even if
+databases are up to date.
+
+.TP
+.B \-\-cachedir <path>
+Set an alternative cache directory.
+
+.TP
+.B \-a, \-\-all
+print all matches of files instead of just the first.
 
 .TP
 .B \-x, \-\-regex
 Enable searching using regular expressions.
+
+.TP
+.B \-\-binary
+Print binary files
+
+.TP
+.B \-e, \-\-extract
+Extract matched files to the current directory.
+
+.TP
+.B \-q, \-\-quiet
+Print file names instead of file content.
+
+.TP
+.B \-i, \-\-install
+Install matched files to the system.
+
+.TP
+.B \-h, \-\-help
+Print help information.
+
+.TP
+.B \-V, \-\-version
+Print version information.
 
 .SH EXAMPLES
 .TP

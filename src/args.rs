@@ -43,21 +43,27 @@ pub struct Args {
     #[arg(short = 'b', long, value_name = "path")]
     /// Set an alternative database location
     pub dbpath: Option<String>,
+    #[arg(long, value_name = "file")]
+    /// Use an alternative pacman.conf
+    pub config: Option<String>,
+    #[arg(long, value_name = "when", value_enum, default_value_t = ColorWhen::Auto)]
+    /// Specify when to enable coloring
+    pub color: ColorWhen,
     #[arg(long, short = 'y', action = ArgAction::Count)]
     /// Download fresh package databases from the server
     pub refresh: u8,
     #[arg(long, value_name = "path")]
     /// Set an alternative cache directory
     pub cachedir: Option<String>,
-    /// Specify when to enable coloring
-    #[arg(long, value_name = "when", value_enum, default_value_t = ColorWhen::Auto)]
-    pub color: ColorWhen,
-    #[arg(short = 'x', long)]
-    /// Enable searching using regular expressions
-    pub regex: bool,
     #[arg(short, long)]
     /// Print all matches of files instead of just the first
     pub all: bool,
+    #[arg(short = 'x', long)]
+    /// Enable searching using regular expressions
+    pub regex: bool,
+    #[arg(long)]
+    ///Print binary files
+    pub binary: bool,
     #[arg(short = 'e', long)]
     /// Extract matched files to the current directory
     pub extract: bool,
@@ -67,12 +73,6 @@ pub struct Args {
     #[arg(short, long)]
     /// Print file names instead of file content
     pub quiet: bool,
-    #[arg(long)]
-    ///Print binary files
-    pub binary: bool,
-    #[arg(long, value_name = "file")]
-    /// Use an alternative pacman.conf
-    pub config: Option<String>,
     #[arg(
         value_name = "targets",
         value_hint = ValueHint::AnyPath,
