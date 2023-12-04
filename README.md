@@ -4,21 +4,25 @@ Print pacman package files
 
 # Usage
 
-`paccat [options] <targets> -- <files>`
+```
+    paccat [options] <target> <files>
+    paccat [options] <targets> -- <files>
+    paccat [options] -<Q|F> [targets] -- <files>
+```
 
 a target can be specified as `<pkgname>`, `<repo>/<pkgname>`, `<url>` or `<file>`.
 
-files can be specified as just the filename or the full path.
+Files can be specified as just the filename or the full path.
 
 ## Examples
 
-`paccat grub -- etc/default/grub`
+`paccat grub etc/default/grub`
 
 Print the contents of 'etc/default/grub' from the grub package.
 
 ---
 
-`paccat pacman -- pacman.conf`
+`paccat pacman pacman.conf`
 
 Print the contents of the first file named 'pacman.conf' from the pacman package.
 
@@ -36,12 +40,12 @@ Print the contents of all files ending in '.conf' from both the pacman and mkini
 
 ---
 
-`paccat ~/pkgs/my-pkg-1.0.0-1.pkg.tar.zst -- myfile`
+`paccat ~/pkgs/my-pkg-1.0.0-1.pkg.tar.zst myfile`
 
 Print the contents of 'myfile' from a package tarball.
 
 ---
 
-`paccat https://archlinux.org/packages/extra/x86_64/git/download -- git-blame.1.gz`
+`paccat https://archlinux.org/packages/extra/x86_64/git/download git-blame.1.gz`
 
 Download and print the contents of 'git-blame.1.gz' from the git package.";
