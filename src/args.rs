@@ -61,6 +61,9 @@ pub struct Args {
     #[arg(short = 'e', long)]
     /// Extract matched files to the current directory
     pub extract: bool,
+    #[arg(long, short, conflicts_with = "extract")]
+    /// Install matched files to the system
+    pub install: bool,
     #[arg(short, long)]
     /// Print file names instead of file content
     pub quiet: bool,
@@ -70,9 +73,6 @@ pub struct Args {
     #[arg(long, value_name = "file")]
     /// Use an alternative pacman.conf
     pub config: Option<String>,
-    #[arg(long, short, conflicts_with = "extract")]
-    /// Install matched files to the system
-    pub install: bool,
     #[arg(
         value_name = "targets",
         value_hint = ValueHint::AnyPath,
