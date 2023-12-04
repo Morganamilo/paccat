@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use clap::CommandFactory;
 use clap_complete::Shell;
 
@@ -10,6 +12,8 @@ fn main() {
         None => return,
         Some(out_dir) => out_dir,
     };
+
+    println!("cargo:rerun-if-changed={}", Path::new(&directory).display());
 
     let mut app = Args::command();
     let name = app.get_name().to_string();
