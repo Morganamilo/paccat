@@ -172,9 +172,9 @@ fn open_output(
     use_bat: bool,
 ) -> Result<()> {
     match (output, use_bat) {
-        (Output::Stdout(_), _) => (),
         (Output::File(_), _) => (),
-        (output @ Output::Bat(_, _), _) | (output @ Output::None, true) => {
+        (output @ Output::Bat(_, _), _)
+        | (output @ Output::None | output @ Output::Stdout(_), true) => {
             let mut child = Command::new("bat")
                 .arg("-pp")
                 .arg("--file-name")
@@ -185,7 +185,9 @@ fn open_output(
             let stdin = child.stdin.take().unwrap();
             *output = Output::Bat(child, stdin);
         }
-        (output @ Output::None, false) => *output = Output::Stdout(stdout.lock()),
+        (output @ Output::None | output @ Output::Stdout(_), false) => {
+            *output = Output::Stdout(stdout.lock())
+        }
     };
     Ok(())
 }
@@ -223,7 +225,7 @@ where
         && !args.quiet
         && !args.extract
         && !args.install
-        && Command::new("bat").arg("-h").status().is_ok();
+        && Command::new("bat").arg("-h").output().is_ok();
 
     for content in archive {
         match content {
@@ -281,9 +283,15 @@ where
                 }
             }
             ArchiveContents::DataChunk(data) if state == EntryState::FirstChunk => {
-                if !args.binary && is_binary(&data) {
-                    state = EntryState::Skip;
-                    eprintln!("{} is a binary file -- use --binary to print", filename);
+                if is_binary(&data) {
+                    output = Output::Stdout(stdout.lock());
+
+                    if args.binary {
+                        read_chunk(&mut state, &mut output, &data)?;
+                    } else {
+                        state = EntryState::Skip;
+                        eprintln!("{} is a binary file use --binary to print", filename);
+                    }
                 } else {
                     read_chunk(&mut state, &mut output, &data)?;
                 }
