@@ -1,6 +1,7 @@
 use crate::args::Args;
 use alpm::{
     Alpm, AnyDownloadEvent, AnyEvent, DownloadEvent, DownloadResult, Event, LogLevel, Package,
+    SigLevel,
 };
 use alpm_utils::DbListExt;
 use alpm_utils::Targ;
@@ -54,6 +55,12 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
         eprintln!("synchronising package databases...");
         alpm.syncdbs_mut().update(args.refresh > 1)?;
     }
+
+    for db in alpm.syncdbs() {
+        db.is_valid()
+            .with_context(|| format!("database {}{} is not valid", db.name(), alpm.dbext()))?
+    }
+
     Ok(alpm)
 }
 
@@ -66,6 +73,30 @@ pub fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str, localdb: bool) -> Result<
     };
     let pkg = pkg.with_context(|| format!("could not find package: {}", target_str))?;
     Ok(pkg)
+}
+
+pub fn verify_packages<'a, I>(alpm: &Alpm, siglevel: SigLevel, files: I) -> Result<()>
+where
+    I: IntoIterator<Item = &'a str>,
+{
+    if !siglevel.contains(SigLevel::PACKAGE) {
+        return Ok(());
+    }
+
+    for file in files {
+        if let Err(e) = alpm
+            .pkg_load(file, false, alpm.remote_file_siglevel())?
+            .check_signature()
+        {
+            if e == alpm::Error::SigMissing && siglevel.contains(SigLevel::PACKAGE_OPTIONAL) {
+                continue;
+            }
+
+            Err(e).with_context(|| format!("failed to verify package {}", file))?;
+        }
+    }
+
+    Ok(())
 }
 
 pub fn get_download_url(pkg: Package) -> Result<String> {

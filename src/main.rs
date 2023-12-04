@@ -8,6 +8,7 @@ use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::sys::stat::{umask, Mode};
 use nix::unistd::isatty;
+use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::{self, Read, Seek, Write};
@@ -264,6 +265,7 @@ fn is_binary(data: &[u8]) -> bool {
 
 fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<String>> {
     let mut download = Vec::new();
+    let mut url = Vec::new();
     let mut repo = Vec::new();
     let mut files = Vec::new();
     let dbs = alpm.syncdbs();
@@ -290,7 +292,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
                     repo.push(pkg);
                 }
             } else if targ.contains("://") {
-                download.push(targ.clone());
+                url.push(targ.clone());
             } else if Path::new(&targ).exists() {
                 files.push(targ.to_string());
             } else {
@@ -301,11 +303,27 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
 
     // todo filter repopkg files
 
-    for pkg in repo {
+    for &pkg in &repo {
         download.push(get_download_url(pkg)?);
     }
+    download.extend(url.clone());
 
     let downloaded = alpm.fetch_pkgurl(download.into_iter())?;
+    let mut iter = downloaded.iter();
+
+    verify_packages(
+        alpm,
+        alpm.local_file_siglevel(),
+        files.iter().map(|s| s.as_str()),
+    )?;
+
+    verify_packages(
+        alpm,
+        alpm.default_siglevel(),
+        iter.by_ref().take(repo.len()),
+    )?;
+    verify_packages(alpm, alpm.remote_file_siglevel(), iter)?;
+
     files.extend(downloaded);
 
     Ok(files)
