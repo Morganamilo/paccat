@@ -2,7 +2,7 @@ use crate::args::Args;
 use crate::pacman::{alpm_init, get_dbpkg, get_download_url};
 use alpm::{Alpm, Package};
 use alpm_utils::DbListExt;
-use anyhow::{bail, Context, Error, Result};
+use anyhow::{bail, ensure, Context, Error, Result};
 use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::signal::{signal, SigHandler, Signal};
@@ -11,14 +11,25 @@ use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File, OpenOptions};
-use std::io::{self, Read, Seek, Write};
+use std::io::{self, Read, Seek, Stdout, StdoutLock, Write};
+use std::mem::take;
 use std::os::unix::fs::fchown;
 use std::os::unix::fs::OpenOptionsExt;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
+use std::process::{Child, ChildStdin, Command, Stdio};
 
 mod args;
 mod pacman;
+
+#[derive(Default)]
+enum Output<'a> {
+    Stdout(StdoutLock<'a>),
+    Bat(Child, ChildStdin),
+    File(File),
+    #[default]
+    None,
+}
 
 #[derive(PartialEq, Eq)]
 enum EntryState {
@@ -147,6 +158,46 @@ fn run() -> Result<i32> {
     Ok(ret)
 }
 
+fn open_output(
+    output: &mut Output,
+    stdout: &mut Stdout,
+    filename: &str,
+    use_bat: bool,
+) -> Result<()> {
+    match (output, use_bat) {
+        (Output::Stdout(_), _) => (),
+        (Output::File(_), _) => (),
+        (output @ Output::Bat(_, _), _) | (output @ Output::None, true) => {
+            let mut child = Command::new("bat")
+                .arg("-pp")
+                .arg("--file-name")
+                .arg(&filename)
+                .stdin(Stdio::piped())
+                .spawn()?;
+
+            let stdin = child.stdin.take().unwrap();
+            *output = Output::Bat(child, stdin);
+        }
+        (output @ Output::None, false) => *output = Output::Stdout(stdout.lock()),
+    };
+    Ok(())
+}
+
+fn close_outout(output: &mut Output) -> Result<()> {
+    if let Output::Bat(mut child, stdin) = take(output) {
+        drop(stdin);
+        let status = child
+            .wait()
+            .with_context(|| format!("failed to wait for bat"))?;
+        ensure!(
+            status.success(),
+            "bat failed to run (exited {})",
+            status.code().unwrap_or(1),
+        );
+    }
+    Ok(())
+}
+
 fn dump_files<R>(
     archive: ArchiveIterator<R>,
     matcher: &mut Match,
@@ -156,12 +207,16 @@ fn dump_files<R>(
 where
     R: Read + Seek,
 {
-    let stdout = io::stdout();
-    let mut stdout = stdout.lock();
+    let mut stdout = io::stdout();
+    let mut output = Output::default();
     let mut state = EntryState::Skip;
     let mut found = 0;
     let mut filename = String::new();
-    let mut cur_extract_file: Option<File> = None;
+
+    let use_bat = !args.quiet
+        && !args.extract
+        && !args.install
+        && Command::new("bat").arg("-h").status().is_ok();
 
     for content in archive {
         match content {
@@ -210,9 +265,10 @@ where
                                     })?;
                             }
 
-                            cur_extract_file = Some(extract_file);
+                            output = Output::File(extract_file);
                         }
                     } else {
+                        open_output(&mut output, &mut stdout, &filename, use_bat)?;
                         state = EntryState::FirstChunk;
                     }
                 }
@@ -222,14 +278,17 @@ where
                     state = EntryState::Skip;
                     eprintln!("{} is a binary file -- use --binary to print", filename);
                 } else {
-                    read_chunk(&mut state, &mut cur_extract_file, &mut stdout, &data)?;
+                    read_chunk(&mut state, &mut output, &data)?;
                 }
             }
             ArchiveContents::DataChunk(v) if state == EntryState::Reading => {
-                read_chunk(&mut state, &mut cur_extract_file, &mut stdout, &v)?;
+                read_chunk(&mut state, &mut output, &v)?;
             }
             ArchiveContents::DataChunk(_) => (),
-            ArchiveContents::EndOfEntry => state = EntryState::Skip,
+            ArchiveContents::EndOfEntry => {
+                state = EntryState::Skip;
+                close_outout(&mut output)?;
+            }
             ArchiveContents::Err(e) => {
                 return Err(e.into());
             }
@@ -247,16 +306,17 @@ where
 
 fn read_chunk(
     state: &mut EntryState,
-    cur_extract_file: &mut Option<File>,
-    stdout: &mut io::StdoutLock<'_>,
+    output: &mut Output,
     data: &[u8],
 ) -> Result<(), anyhow::Error> {
     *state = EntryState::Reading;
-    Ok(if let Some(extract_file) = cur_extract_file {
-        extract_file.write_all(&data)?;
-    } else {
-        stdout.write_all(&data)?;
-    })
+    match output {
+        Output::Stdout(stdout) => stdout.write_all(&data)?,
+        Output::Bat(_, stdin) => stdin.write_all(&data)?,
+        Output::File(file) => file.write_all(&data)?,
+        Output::None => (),
+    };
+    Ok(())
 }
 
 fn is_binary(data: &[u8]) -> bool {
