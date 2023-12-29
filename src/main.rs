@@ -304,7 +304,7 @@ where
                 }
             }
             ArchiveContents::DataChunk(data) if state == EntryState::FirstChunk => {
-                if is_binary(&data) {
+                if is_binary(&data) && matches!(output, Output::Bat(_, _)) {
                     output = Output::Stdout(stdout.lock());
 
                     if args.binary {
