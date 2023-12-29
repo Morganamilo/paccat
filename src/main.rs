@@ -251,6 +251,10 @@ where
     for content in archive {
         match content {
             ArchiveContents::StartOfEntry(mut file, stat) => {
+                if file.ends_with('/') {
+                    continue;
+                }
+
                 filename = file.rsplit('/').next().unwrap().to_string();
 
                 if matcher.is_match(&file, !args.all) {
