@@ -1,3 +1,5 @@
+use std::io::{stderr, Write};
+
 use crate::args::Args;
 use alpm::{
     Alpm, AnyDownloadEvent, AnyEvent, DownloadEvent, DownloadResult, Event, LogLevel, Package,
@@ -45,7 +47,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     }
 
     if args.refresh > 0 {
-        eprintln!("synchronising package databases...");
+        writeln!(stderr(), "synchronising package databases...")?;
         let res = alpm.syncdbs_mut().update(args.refresh > 1);
 
         if !Uid::current().is_root() {
@@ -115,25 +117,30 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
     }
 
     if let DownloadEvent::Completed(c) = event.event() {
-        match c.result {
-            DownloadResult::Success => eprintln!("{} downloaded", file),
-            DownloadResult::UpToDate => eprintln!("{} is up to date", file),
-            DownloadResult::Failed => eprintln!("{} failed to download", file),
-        }
+        let _ = match c.result {
+            DownloadResult::Success => writeln!(stderr(), "{} downloaded", file),
+            DownloadResult::UpToDate => writeln!(stderr(), "{} is up to date", file),
+            DownloadResult::Failed => writeln!(stderr(), "{} failed to download", file),
+        };
     }
 }
 
 fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
     match level {
-        LogLevel::WARNING => eprint!("warning: {}", msg),
-        LogLevel::ERROR => eprint!("error: {}", msg),
+        LogLevel::WARNING => {
+            let _ = write!(stderr(), "warning: {}", msg);
+        }
+        LogLevel::ERROR => {
+            let _ = write!(stderr(), "error: {}", msg);
+        }
         _ => (),
     }
 }
 
 fn event_cb(event: AnyEvent, _: &mut ()) {
     if let Event::DatabaseMissing(e) = event.event() {
-        eprintln!(
+        let _ = writeln!(
+            stderr(),
             "database file for {} does not exist (use pacman to download)",
             e.dbname()
         );

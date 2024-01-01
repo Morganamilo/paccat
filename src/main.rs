@@ -5,13 +5,12 @@ use alpm_utils::DbListExt;
 use anyhow::{bail, ensure, Context, Error, Result};
 use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
-use nix::sys::signal::{signal, SigHandler, Signal};
 use nix::sys::stat::{umask, Mode};
 use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File};
-use std::io::{self, stdin, BufRead, Read, Seek, Stdout, StdoutLock, Write};
+use std::io::{self, stderr, stdin, BufRead, ErrorKind, Read, Seek, Stdout, StdoutLock, Write};
 use std::mem::take;
 use std::os::unix::fs::fchown;
 use std::os::unix::fs::OpenOptionsExt;
@@ -96,19 +95,23 @@ impl MatchWith {
 }
 
 fn print_error(err: Error) {
-    eprint!("error");
+    let mut stderr = stderr();
+    let _ = write!(stderr, "error");
     for link in err.chain() {
-        eprint!(": {}", link);
+        let _ = write!(stderr, ": {}", link);
     }
-    eprintln!();
+    let _ = writeln!(stderr);
 }
 
 fn main() {
-    unsafe { signal(Signal::SIGPIPE, SigHandler::SigDfl).unwrap() };
-
     match run() {
         Ok(i) => std::process::exit(i),
         Err(e) => {
+            if let Some(e) = e.downcast_ref::<io::Error>() {
+                if e.kind() == ErrorKind::BrokenPipe {
+                    std::process::exit(1);
+                }
+            }
             print_error(e);
             std::process::exit(1);
         }
@@ -315,7 +318,11 @@ where
                         read_chunk(&mut state, &mut output, &data)?;
                     } else {
                         state = EntryState::Skip;
-                        eprintln!("{} is a binary file use --binary to print", filename);
+                        writeln!(
+                            stderr(),
+                            "{} is a binary file use --binary to print",
+                            filename
+                        )?;
                     }
                 } else {
                     read_chunk(&mut state, &mut output, &data)?;
