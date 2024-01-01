@@ -396,6 +396,10 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
                 .filter(|pkg| want_pkg(alpm, *pkg, matcher));
             repo.extend(pkgs);
         }
+
+        if !args.all {
+            repo.truncate(1);
+        }
     } else {
         for targ in &args.targets {
             if let Ok(pkg) = get_dbpkg(alpm, targ, args.localdb) {
