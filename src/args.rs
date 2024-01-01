@@ -3,6 +3,7 @@ use clap::{ArgAction, Parser, ValueEnum, ValueHint};
 const TEMPLATE: &str = "usage:
     paccat [options] <target> <files>
     paccat [options] <targets> -- <files>
+    paccat [options] -<Q|F> <files>
     paccat [options] -<Q|F> [targets] -- <files>
 
 a target can be specified as:

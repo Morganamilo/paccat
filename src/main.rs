@@ -142,7 +142,11 @@ fn run() -> Result<i32> {
     let is_tty = isatty(stdout.as_raw_fd()).unwrap_or(false);
 
     if !args.targets.is_empty() && args.files.is_empty() {
-        args.files = args.targets.split_off(1);
+        if args.filedb || args.localdb {
+            args.files = args.targets.split_off(0);
+        } else {
+            args.files = args.targets.split_off(1);
+        }
     }
 
     if !args.localdb && !args.filedb && args.targets.is_empty() {
