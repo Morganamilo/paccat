@@ -262,6 +262,13 @@ where
                     continue;
                 }
 
+                if args.executable
+                    && !Mode::from_bits_truncate(stat.st_mode).contains(Mode::S_IXUSR)
+                {
+                    state = EntryState::Skip;
+                    continue;
+                }
+
                 filename = file.rsplit('/').next().unwrap().to_string();
 
                 if matcher.is_match(&file, !args.all) {
@@ -397,7 +404,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
             repo.extend(pkgs);
         }
 
-        if !args.all {
+        if !args.all && !args.executable {
             repo.truncate(1);
         }
     } else {

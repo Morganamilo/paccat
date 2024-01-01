@@ -76,6 +76,10 @@ Enable searching using regular expressions.
 Print binary files
 
 .TP
+.B \-X, \-\-executable
+Filter results to executable files.
+
+.TP
 .B \-e, \-\-extract
 Extract matched files to the current directory.
 
@@ -105,11 +109,11 @@ Print the contents of 'etc/default/grub' from the grub package.
 Print the contents of the first file named 'pacman.conf' from the pacman package.
 
 .TP
-.B paccat \-F \-\- pacman.conf
+.B paccat \-F  pacman.conf
 Print the contents of the first file named 'pacman.conf' in the repos
 
 .TP
-.B paccat \-x pacman mkinitcpio \-\- '\\.conf^'
+.B paccat \-x pacman mkinitcpio \-\- '\\.conf$'
 Print the contents of all files ending in '.conf' from both the pacman and mkinitcpio packages.
 
 .TP

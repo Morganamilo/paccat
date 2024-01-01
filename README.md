@@ -7,7 +7,9 @@ Print pacman package files
 ```
     paccat [options] <target> <files>
     paccat [options] <targets> -- <files>
+    paccat [options] -<Q|F> <files>
     paccat [options] -<Q|F> [targets] -- <files>
+
 ```
 
 a target can be specified as `<pkgname>`, `<repo>/<pkgname>`, `<url>` or `<file>`.
@@ -28,13 +30,13 @@ Print the contents of the first file named 'pacman.conf' from the pacman package
 
 ---
 
-`paccat -F -- pacman.conf`
+`paccat -F pacman.conf`
 
 Print the contents of the first file named 'pacman.conf' in the repos
 
 ---
 
-`paccat -x pacman mkinitcpio -- '\\.conf^'`
+`paccat -x pacman mkinitcpio -- '\\.conf$'`
 
 Print the contents of all files ending in '.conf' from both the pacman and mkinitcpio packages.
 

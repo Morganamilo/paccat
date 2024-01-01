@@ -63,8 +63,11 @@ pub struct Args {
     /// Enable searching using regular expressions
     pub regex: bool,
     #[arg(long)]
-    ///Print binary files
+    /// Print binary files
     pub binary: bool,
+    /// Filter results to executable files
+    #[arg(long, short = 'X')]
+    pub executable: bool,
     #[arg(short = 'e', long)]
     /// Extract matched files to the current directory
     pub extract: bool,
