@@ -37,19 +37,33 @@ enum EntryState {
     Reading,
 }
 
+#[derive(Debug)]
 struct Match {
     with: MatchWith,
     exact_file: bool,
+    matched: Vec<usize>,
 }
 
 impl Match {
     fn new(regex: bool, files: Vec<String>) -> Result<Self> {
         let exact_file = files.iter().any(|f| f.contains('/'));
         let with = MatchWith::new(regex, files)?;
-        Ok(Self { exact_file, with })
+        let matched = Vec::new();
+        Ok(Self {
+            exact_file,
+            with,
+            matched,
+        })
     }
 
-    fn is_match(&mut self, file: &str, remove: bool) -> bool {
+    fn all_matched(&self) -> bool {
+        match &self.with {
+            MatchWith::Regex(r) => r.len() == self.matched.len(),
+            MatchWith::Files(f) => f.len() == self.matched.len(),
+        }
+    }
+
+    fn is_match(&mut self, file: &str, match_once: bool) -> bool {
         let file = if !self.exact_file {
             file.rsplit('/').next().unwrap()
         } else {
@@ -61,13 +75,26 @@ impl Match {
         }
 
         match self.with {
-            MatchWith::Regex(ref r) => r.is_match(file),
+            MatchWith::Regex(ref mut r) => {
+                let mut new_match = false;
+                for m in r.matches(file) {
+                    if !self.matched.contains(&m) {
+                        self.matched.push(m);
+                        new_match = true;
+                    } else {
+                        new_match = !match_once;
+                    }
+                }
+                new_match
+            }
             MatchWith::Files(ref mut f) => {
                 if let Some(pos) = f.iter().position(|t| t == file || t == "*") {
-                    if remove {
-                        f.remove(pos);
+                    if !self.matched.contains(&pos) {
+                        self.matched.push(pos);
+                        true
+                    } else {
+                        !match_once
                     }
-                    true
                 } else {
                     false
                 }
@@ -76,6 +103,7 @@ impl Match {
     }
 }
 
+#[derive(Debug)]
 enum MatchWith {
     Regex(RegexSet),
     Files(Vec<String>),
@@ -137,7 +165,6 @@ fn read_stdin(values: &mut Vec<String>) -> Result<()> {
 
 fn run() -> Result<i32> {
     let mut args = args::Args::parse();
-    let mut ret = 0;
     let stdout = io::stdout();
     let is_tty = isatty(stdout.as_raw_fd()).unwrap_or(false);
 
@@ -186,10 +213,13 @@ fn run() -> Result<i32> {
     for pkg in pkgs {
         let file = File::open(&pkg).with_context(|| format!("failed to open {}", pkg))?;
         let archive = ArchiveIterator::from_read(file)?;
-        ret |= dump_files(archive, &mut matcher, &args, color, &alpm)?;
+        dump_files(archive, &mut matcher, &args, color, &alpm)?;
     }
 
-    Ok(ret)
+    match matcher.all_matched() {
+        true => Ok(0),
+        false => Ok(1),
+    }
 }
 
 fn open_output(
@@ -239,14 +269,13 @@ fn dump_files<R>(
     args: &Args,
     color: bool,
     alpm: &Alpm,
-) -> Result<i32>
+) -> Result<()>
 where
     R: Read + Seek,
 {
     let mut stdout = io::stdout();
     let mut output = Output::default();
     let mut state = EntryState::Skip;
-    let mut found = 0;
     let mut filename = String::new();
 
     let use_bat = color
@@ -272,8 +301,6 @@ where
                 filename = file.rsplit('/').next().unwrap().to_string();
 
                 if matcher.is_match(&file, !args.all) {
-                    found += 1;
-
                     if args.list || args.extract || args.install {
                         writeln!(stdout, "{}", file)?;
 
@@ -353,13 +380,7 @@ where
         }
     }
 
-    let ret = match &matcher.with {
-        MatchWith::Files(f) if f.is_empty() => 0,
-        MatchWith::Regex(_) if found != 0 => 0,
-        _ => 1,
-    };
-
-    Ok(ret)
+    Ok(())
 }
 
 fn read_chunk(
@@ -393,14 +414,14 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
             let pkgs = alpm.localdb().pkgs();
             let pkgs = pkgs
                 .iter()
-                .filter(|pkg| want_pkg(alpm, *pkg, matcher))
+                .filter(|pkg| want_pkg(args.all, *pkg, matcher))
                 .filter_map(|p| dbs.pkg(p.name()).ok());
             repo.extend(pkgs);
         } else if args.filedb {
             let pkgs = dbs
                 .iter()
                 .flat_map(|db| db.pkgs())
-                .filter(|pkg| want_pkg(alpm, *pkg, matcher));
+                .filter(|pkg| want_pkg(args.all, *pkg, matcher));
             repo.extend(pkgs);
         }
 
@@ -410,7 +431,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
     } else {
         for targ in &args.targets {
             if let Ok(pkg) = get_dbpkg(alpm, targ, args.localdb) {
-                if pkg.files().files().is_empty() || want_pkg(alpm, pkg, matcher) {
+                if pkg.files().files().is_empty() || want_pkg(args.all, pkg, matcher) {
                     repo.push(pkg);
                 }
             } else if targ.contains("://") {
@@ -422,6 +443,8 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
             }
         }
     }
+
+    matcher.matched.clear();
 
     // todo filter repopkg files
 
@@ -451,9 +474,9 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
     Ok(files)
 }
 
-fn want_pkg(_alpm: &Alpm, pkg: Package, matcher: &mut Match) -> bool {
+fn want_pkg(all: bool, pkg: Package, matcher: &mut Match) -> bool {
     let files = pkg.files();
-    if matches!(matcher.with, MatchWith::Files(ref f) if f.is_empty()) {
+    if !all && matcher.all_matched() {
         return false;
     }
     files
