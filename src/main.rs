@@ -5,7 +5,7 @@ use alpm_utils::DbListExt;
 use anyhow::{bail, ensure, Context, Error, Result};
 use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
-use nix::sys::stat::{umask, Mode};
+use nix::sys::stat::{umask, Mode, SFlag};
 use nix::unistd::{isatty, Uid};
 use pacman::verify_packages;
 use regex::RegexSet;
@@ -258,14 +258,14 @@ where
     for content in archive {
         match content {
             ArchiveContents::StartOfEntry(mut file, stat) => {
-                if file.ends_with('/') {
+                let mode = Mode::from_bits_truncate(stat.st_mode);
+                let kind = SFlag::from_bits_truncate(stat.st_mode);
+
+                if kind != SFlag::S_IFREG {
                     continue;
                 }
 
-                if args.executable
-                    && !Mode::from_bits_truncate(stat.st_mode).contains(Mode::S_IXUSR)
-                {
-                    state = EntryState::Skip;
+                if args.executable && !mode.contains(Mode::S_IXUSR) {
                     continue;
                 }
 
