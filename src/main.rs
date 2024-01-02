@@ -63,7 +63,7 @@ impl Match {
         match self.with {
             MatchWith::Regex(ref r) => r.is_match(file),
             MatchWith::Files(ref mut f) => {
-                if let Some(pos) = f.iter().position(|t| t == file) {
+                if let Some(pos) = f.iter().position(|t| t == file || t == "*") {
                     if remove {
                         f.remove(pos);
                     }
