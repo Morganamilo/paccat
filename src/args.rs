@@ -76,7 +76,7 @@ pub struct Args {
     pub install: bool,
     #[arg(short, long)]
     /// Print file names instead of file content
-    pub quiet: bool,
+    pub list: bool,
     #[arg(
         value_name = "targets",
         value_hint = ValueHint::AnyPath,

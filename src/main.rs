@@ -250,7 +250,7 @@ where
     let mut filename = String::new();
 
     let use_bat = color
-        && !args.quiet
+        && !args.list
         && !args.extract
         && !args.install
         && Command::new("bat").arg("-h").output().is_ok();
@@ -274,7 +274,7 @@ where
                 if matcher.is_match(&file, !args.all) {
                     found += 1;
 
-                    if args.quiet || args.extract || args.install {
+                    if args.list || args.extract || args.install {
                         writeln!(stdout, "{}", file)?;
 
                         if args.extract || args.install {
