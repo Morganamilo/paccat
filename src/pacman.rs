@@ -1,6 +1,7 @@
 use std::io::{stderr, Write};
 
 use crate::args::Args;
+use alpm::SigList;
 use alpm::{
     Alpm, AnyDownloadEvent, AnyEvent, DownloadEvent, DownloadResult, Event, LogLevel, Package,
     SigLevel,
@@ -65,7 +66,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     Ok(alpm)
 }
 
-pub fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str, localdb: bool) -> Result<Package<'a>> {
+pub fn get_dbpkg<'a>(alpm: &'a Alpm, target_str: &str, localdb: bool) -> Result<&'a Package> {
     let pkg = if localdb {
         alpm.localdb().pkg(target_str).ok()
     } else {
@@ -84,10 +85,12 @@ where
         return Ok(());
     }
 
+    let mut siglist = SigList::new();
+
     for file in files {
         if let Err(e) = alpm
             .pkg_load(file, false, alpm.remote_file_siglevel())?
-            .check_signature()
+            .check_signature(&mut siglist)
         {
             if e == alpm::Error::SigMissing && siglevel.contains(SigLevel::PACKAGE_OPTIONAL) {
                 continue;
@@ -100,14 +103,14 @@ where
     Ok(())
 }
 
-pub fn get_download_url(pkg: Package) -> Result<String> {
+pub fn get_download_url(pkg: &Package) -> Result<String> {
     let server = pkg
         .db()
         .unwrap()
         .servers()
         .first()
         .ok_or(alpm::Error::ServerNone)?;
-    let url = format!("{}/{}", server, pkg.filename());
+    let url = format!("{}/{}", server, pkg.filename().unwrap_or("unknown"));
     Ok(url)
 }
 

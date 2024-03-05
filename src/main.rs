@@ -474,7 +474,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
     Ok(files)
 }
 
-fn want_pkg(all: bool, pkg: Package, matcher: &mut Match) -> bool {
+fn want_pkg(all: bool, pkg: &Package, matcher: &mut Match) -> bool {
     let files = pkg.files();
     if !all && matcher.all_matched() {
         return false;
