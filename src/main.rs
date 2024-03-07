@@ -414,14 +414,14 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
             let pkgs = alpm.localdb().pkgs();
             let pkgs = pkgs
                 .iter()
-                .filter(|pkg| want_pkg(args.all, *pkg, matcher))
+                .filter(|pkg| want_pkg(args.all, pkg, matcher))
                 .filter_map(|p| dbs.pkg(p.name()).ok());
             repo.extend(pkgs);
         } else if args.filedb {
             let pkgs = dbs
                 .iter()
                 .flat_map(|db| db.pkgs())
-                .filter(|pkg| want_pkg(args.all, *pkg, matcher));
+                .filter(|pkg| want_pkg(args.all, pkg, matcher));
             repo.extend(pkgs);
         }
 
