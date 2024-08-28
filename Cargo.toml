@@ -15,15 +15,15 @@ alpm = "4.0.0"
 alpm-utils = { version = "4.0.1", features = ["conf"] }
 pacmanconf = "3.0.0"
 
-anyhow = "1.0.80"
-compress-tools = "0.14.3"
-nix = { version = "0.28.0", features = ["fs", "user"] }
-regex = "1.10.3"
-clap = { version = "4.5.1", default-features = false, features = ["std", "cargo", "derive", "help"]}
+anyhow = "1.0.86"
+compress-tools = "0.15.1"
+nix = { version = "0.29.0", features = ["fs", "user"] }
+regex = "1.10.6"
+clap = { version = "4.5.16", default-features = false, features = ["std", "cargo", "derive", "help"]}
 
 [build-dependencies]
-clap = { version = "4.5.1", default-features = false, features = ["std", "cargo", "derive", "help"]}
-clap_complete = "4.5.1"
+clap = { version = "4.5.16", default-features = false, features = ["std", "cargo", "derive", "help"]}
+clap_complete = "4.5.24"
 
 [profile.release]
 codegen-units = 1
