@@ -11,9 +11,9 @@ keywords = ["archlinux", "arch", "alpm", "pacman"]
 include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [dependencies]
-alpm = "3.0.4"
-alpm-utils = { version = "3.0.2", features = ["conf"] }
-pacmanconf = "2.0.0"
+alpm = "4.0.0"
+alpm-utils = { version = "4.0.1", features = ["conf"] }
+pacmanconf = "3.0.0"
 
 anyhow = "1.0.80"
 compress-tools = "0.14.3"
