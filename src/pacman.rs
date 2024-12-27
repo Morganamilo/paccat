@@ -35,6 +35,9 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     alpm.set_event_cb((), event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
+    if !Uid::current().is_root() {
+        alpm.set_sandbox_user(Option::<&str>::None)?;
+    }
 
     if let Some(dir) = args.cachedir.as_deref() {
         alpm.add_cachedir(dir)?;
