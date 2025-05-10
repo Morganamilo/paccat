@@ -20,7 +20,7 @@
 
 - Print first match by default with -a to print all 484e71d
 - Change tmp download dir to /tmp/paccat c765e95
-- Print binrary files when piped #10
+- Print binary files when piped #10
 
 ## Paccat v0.1.0 (2021-10-13)
 

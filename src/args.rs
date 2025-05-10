@@ -33,10 +33,10 @@ pub enum ColorWhen {
 /// Print pacman package files
 pub struct Args {
     #[arg(short = 'F', long = "files")]
-    /// Use files database to search for files before deciding to download
+    /// Use files database to search for files before downloading
     pub filedb: bool,
     #[arg(short = 'Q', conflicts_with = "filedb", long = "query")]
-    /// Use local database to search for files before deciding to download
+    /// Use local database to search for files before downloading
     pub localdb: bool,
     #[arg(short, long, value_name = "path")]
     /// Set an alternative root directory
@@ -57,7 +57,7 @@ pub struct Args {
     /// Set an alternative cache directory
     pub cachedir: Option<String>,
     #[arg(short, long)]
-    /// Print all matches of files instead of just the first
+    /// Print all matching files instead of just the first
     pub all: bool,
     #[arg(short = 'x', long)]
     /// Enable searching using regular expressions
