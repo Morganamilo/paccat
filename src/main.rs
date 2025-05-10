@@ -6,15 +6,16 @@ use anyhow::{bail, ensure, Context, Error, Result};
 use clap::Parser;
 use compress_tools::{ArchiveContents, ArchiveIterator};
 use nix::sys::stat::{umask, Mode, SFlag};
-use nix::unistd::{isatty, Uid};
+use nix::unistd::Uid;
 use pacman::verify_packages;
 use regex::RegexSet;
 use std::fs::{create_dir_all, File};
-use std::io::{self, stderr, stdin, BufRead, ErrorKind, Read, Seek, Stdout, StdoutLock, Write};
+use std::io::{
+    self, stderr, stdin, BufRead, ErrorKind, IsTerminal, Read, Seek, Stdout, StdoutLock, Write,
+};
 use std::mem::take;
 use std::os::unix::fs::fchown;
 use std::os::unix::fs::OpenOptionsExt;
-use std::os::unix::io::AsRawFd;
 use std::path::Path;
 use std::process::{Child, ChildStdin, Command, Stdio};
 
@@ -150,7 +151,7 @@ fn read_stdin(values: &mut Vec<String>) -> Result<()> {
     if let Some(index) = values.iter().position(|s| s == "-") {
         values.remove(index);
 
-        if isatty(stdin().as_raw_fd()).unwrap_or(false) {
+        if stdin().is_terminal() {
             bail!("argument '-' specified without input on stdin");
         }
 
@@ -166,7 +167,7 @@ fn read_stdin(values: &mut Vec<String>) -> Result<()> {
 fn run() -> Result<i32> {
     let mut args = args::Args::parse();
     let stdout = io::stdout();
-    let is_tty = isatty(stdout.as_raw_fd()).unwrap_or(false);
+    let is_tty = stdout.is_terminal();
 
     if !args.targets.is_empty() && args.files.is_empty() {
         if args.filedb || args.localdb {
