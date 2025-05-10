@@ -77,6 +77,9 @@ pub struct Args {
     #[arg(short, long)]
     /// Print file names instead of file content
     pub list: bool,
+    #[arg(long)]
+    /// Display debug messages
+    pub debug: bool,
     #[arg(
         value_name = "targets",
         value_hint = ValueHint::AnyPath,

@@ -31,7 +31,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     }
 
     alpm.set_dl_cb((), download_cb);
-    alpm.set_log_cb((), log_cb);
+    alpm.set_log_cb(args.debug, log_cb);
     alpm.set_event_cb((), event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
@@ -131,13 +131,16 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
     }
 }
 
-fn log_cb(level: LogLevel, msg: &str, _: &mut ()) {
+fn log_cb(level: LogLevel, msg: &str, debug: &mut bool) {
     match level {
         LogLevel::WARNING => {
             let _ = write!(stderr(), "warning: {}", msg);
         }
         LogLevel::ERROR => {
             let _ = write!(stderr(), "error: {}", msg);
+        }
+        LogLevel::DEBUG if *debug => {
+            let _ = write!(stderr(), "debug: {}", msg);
         }
         _ => (),
     }
