@@ -344,7 +344,8 @@ where
                             output = Output::File(extract_file);
                         }
                     } else {
-                        open_output(&mut output, &mut stdout, &filename, use_bat)?;
+                        let file = "/".to_string() + &file;
+                        open_output(&mut output, &mut stdout, &file, use_bat)?;
                         state = EntryState::FirstChunk;
                     }
                 }
