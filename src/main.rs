@@ -437,7 +437,7 @@ fn get_targets(alpm: &Alpm, args: &Args, matcher: &mut Match) -> Result<Vec<Stri
                 }
             } else if targ.contains("://") {
                 url.push(targ.clone());
-            } else if Path::new(&targ).exists() {
+            } else if Path::new(&targ).is_file() {
                 files.push(targ.to_string());
             } else {
                 bail!("'{}' is not a package, file or url", targ);
