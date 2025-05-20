@@ -42,8 +42,9 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     if let Some(dir) = args.cachedir.as_deref() {
         alpm.add_cachedir(dir)?;
     } else {
+        let user = Uid::current();
         let tmp = std::env::temp_dir()
-            .join("paccat")
+            .join(format!("paccat-{}", user))
             .to_str()
             .context("tempdir is not a str")?
             .to_string();
