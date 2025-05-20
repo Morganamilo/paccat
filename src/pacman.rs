@@ -32,7 +32,7 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
 
     alpm.set_dl_cb((), download_cb);
     alpm.set_log_cb(args.debug, log_cb);
-    alpm.set_event_cb((), event_cb);
+    alpm.set_event_cb(args.refresh != 0, event_cb);
 
     alpm_utils::configure_alpm(&mut alpm, &conf)?;
     if !Uid::current().is_root() {
@@ -131,7 +131,7 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
     }
 }
 
-fn log_cb(level: LogLevel, msg: &str, debug: &mut bool) {
+fn log_cb(level: LogLevel, msg: &str, &mut debug: &mut bool) {
     match level {
         LogLevel::WARNING => {
             let _ = write!(stderr(), "warning: {}", msg);
@@ -139,19 +139,19 @@ fn log_cb(level: LogLevel, msg: &str, debug: &mut bool) {
         LogLevel::ERROR => {
             let _ = write!(stderr(), "error: {}", msg);
         }
-        LogLevel::DEBUG if *debug => {
+        LogLevel::DEBUG if debug => {
             let _ = write!(stderr(), "debug: {}", msg);
         }
         _ => (),
     }
 }
 
-fn event_cb(event: AnyEvent, _: &mut ()) {
+fn event_cb(event: AnyEvent, &mut refresh: &mut bool) {
     match event.event() {
-        Event::DatabaseMissing(e) => {
+        Event::DatabaseMissing(e) if !refresh => {
             let _ = writeln!(
                 stderr(),
-                "database file for {} does not exist (use pacman to download)",
+                "database file for {} does not exist (use '-Fy 'to download)",
                 e.dbname()
             );
         }
