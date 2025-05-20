@@ -54,7 +54,7 @@ pub struct Args {
     /// Download fresh package databases from the server
     pub refresh: u8,
     #[arg(long, value_name = "path")]
-    /// Set an alternative cache directory
+    /// Set the primary cache directory
     pub cachedir: Option<String>,
     #[arg(short, long)]
     /// Print all matching files instead of just the first

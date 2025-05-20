@@ -40,7 +40,13 @@ pub fn alpm_init(args: &Args) -> Result<Alpm> {
     }
 
     if let Some(dir) = args.cachedir.as_deref() {
-        alpm.add_cachedir(dir)?;
+        let mut cache = alpm
+            .cachedirs()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        cache.insert(0, dir.to_string());
+        alpm.set_cachedirs(cache.iter())?;
     } else {
         let user = Uid::current();
         let tmp = std::env::temp_dir()
