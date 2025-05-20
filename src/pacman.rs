@@ -147,11 +147,17 @@ fn log_cb(level: LogLevel, msg: &str, debug: &mut bool) {
 }
 
 fn event_cb(event: AnyEvent, _: &mut ()) {
-    if let Event::DatabaseMissing(e) = event.event() {
-        let _ = writeln!(
-            stderr(),
-            "database file for {} does not exist (use pacman to download)",
-            e.dbname()
-        );
+    match event.event() {
+        Event::DatabaseMissing(e) => {
+            let _ = writeln!(
+                stderr(),
+                "database file for {} does not exist (use pacman to download)",
+                e.dbname()
+            );
+        }
+        Event::PkgRetrieveStart(_) => {
+            let _ = writeln!(stderr(), "downloading packages...");
+        }
+        _ => (),
     }
 }
