@@ -180,7 +180,7 @@ fn run() -> Result<i32> {
     if args.refresh == 0 && !args.localdb && !args.filedb && args.targets.is_empty() {
         bail!("no targets specified (use -h for help)");
     }
-    if args.refresh == 0 && args.files.is_empty() {
+    if (args.refresh == 0 && args.files.is_empty()) || !args.targets.is_empty() {
         bail!("no files specified (use -h for help)");
     }
 
