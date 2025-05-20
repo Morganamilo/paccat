@@ -124,9 +124,9 @@ fn download_cb(file: &str, event: AnyDownloadEvent, _: &mut ()) {
 
     if let DownloadEvent::Completed(c) = event.event() {
         let _ = match c.result {
-            DownloadResult::Success => writeln!(stderr(), "{} downloaded", file),
-            DownloadResult::UpToDate => writeln!(stderr(), "{} is up to date", file),
-            DownloadResult::Failed => writeln!(stderr(), "{} failed to download", file),
+            DownloadResult::Success => writeln!(stderr(), "  {} downloaded", file),
+            DownloadResult::UpToDate => writeln!(stderr(), "  {} is up to date", file),
+            DownloadResult::Failed => writeln!(stderr(), "  {} failed to download", file),
         };
     }
 }
