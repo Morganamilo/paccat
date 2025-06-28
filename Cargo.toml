@@ -19,11 +19,11 @@ anyhow = "1.0.98"
 compress-tools = "0.15.1"
 nix = { version = "0.30.1", features = ["fs", "user"] }
 regex = "1.11.1"
-clap = { version = "4.5.37", default-features = false, features = ["std", "cargo", "derive", "help"]}
+clap = { version = "4.5.40", default-features = false, features = ["std", "cargo", "derive", "help"]}
 
 [build-dependencies]
-clap = { version = "4.5.37", default-features = false, features = ["std", "cargo", "derive", "help"]}
-clap_complete = "4.5.50"
+clap = { version = "4.5.40", default-features = false, features = ["std", "cargo", "derive", "help"]}
+clap_complete = "4.5.54"
 
 [profile.release]
 codegen-units = 1
