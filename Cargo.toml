@@ -5,7 +5,7 @@ authors = ["morganamilo <morganamilo@archlinux.org>"]
 edition = "2021"
 
 description = "Print pacman package files"
-repository = "http://github.com/Morganamilo/paccat"
+repository = "https://github.com/Morganamilo/paccat"
 license = "GPL-3.0"
 keywords = ["archlinux", "arch", "alpm", "pacman"]
 include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
